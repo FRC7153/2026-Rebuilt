@@ -94,10 +94,5 @@ public final class SwerveConstants {
                           BASE_DIMENSIONS.getY() / 2.0 - EDGE);
     public static final Translation2d RR_MODULE_LOCATION =
         new Translation2d(BASE_DIMENSIONS.getX() / -2.0 + EDGE,
-                          BASE_DIMENSIONS.getY() / -2.0 + EDGE);
-
-
-
-
-
+                          BASE_DIMENSIONS.getY() / -2.0 + EDGE);                
 }
