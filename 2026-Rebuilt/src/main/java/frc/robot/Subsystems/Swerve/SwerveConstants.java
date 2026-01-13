@@ -16,14 +16,14 @@ import edu.wpi.first.math.util.Units;
 
 public final class SwerveConstants {
     //Speed Configs 
-    public static final double MAX_WHEEL_VELOCITY = 0.0; //TODO
+    public static final double MAX_WHEEL_VELOCITY = 4.5; 
 
     //Max drive speeds 
-    public static final double FAST_TRANLATIONAL_SPEED = 0.0; //TODO m/s
-    public static final double FAST_ROTATIONAL_SPEED = 0.0; //TODO rad/s
+    public static final double FAST_TRANSLATIONAL_SPEED = 4.5; // m/s
+    public static final double FAST_ROTATIONAL_SPEED = 8.5; // rad/s
 
-    public static final double SLOW_TRANSLATIONAL_SPEED = 0.0; //TODO
-    public static final double SLOW_ROTATIONAL_SPEED = 0.0; //TODO rad/s
+    public static final double SLOW_TRANSLATIONAL_SPEED = FAST_TRANSLATIONAL_SPEED * 0.4; //TODO
+    public static final double SLOW_ROTATIONAL_SPEED = 10.0; // rad/s
 
     // CANCODER Offsets (in rotations, CCW+, -0.5 to 0.5 range)
     public static final double FL_CANCODER_OFFSET = 0.0;//TODO
@@ -37,8 +37,8 @@ public final class SwerveConstants {
         SensorDirectionValue.Clockwise_Positive;
 
     //Drive Kraken x60
-    public static final double WHEEL_CIRCUMFERENCE = 0.0; //TODO meters
-    public static final double DRIVE_GEAR_RATIO = 0.0; //TODO
+    public static final double WHEEL_CIRCUMFERENCE = Units.inchesToMeters(4.0) * Math.PI; //meters
+    public static final double DRIVE_GEAR_RATIO = 8.14; //sds mk4i L1
 
     private static final Slot0Configs DRIVE_MOTOR_GAINS = new Slot0Configs()
         .withKP(0.0).withKI(0.0).withKD(0.0).withKS(0.0)
@@ -60,7 +60,7 @@ public final class SwerveConstants {
         .withFeedback(DRIVE_ENCODER);
 
     // Steer NEO 
-    public static final double STEER_GEAR_RATIO = 0.0; //TODO
+    public static final double STEER_GEAR_RATIO = 150.0 / 7.0; //sds mk4i L1
 
     public static final SparkBaseConfig STEER_CONFIG = new SparkFlexConfig()
         .inverted(false)//TODO
@@ -83,16 +83,10 @@ public final class SwerveConstants {
      * Positive x values represent moving toward the front of the robot whereas positive y values 
      * represent moving toward the left of the robot.
      */
-    public static final Translation2d FL_MODULE_LOCATION = 
-        new Translation2d(BASE_DIMENSIONS.getX() / 2.0 - EDGE,
-                          BASE_DIMENSIONS.getY() / 2.0 - EDGE);
-    public static final Translation2d FR_MODULE_LOCATION = 
-        new Translation2d(BASE_DIMENSIONS.getX() / 2.0 - EDGE,
-                          BASE_DIMENSIONS.getY() / -2.0 + EDGE);
-    public static final Translation2d RL_MODULE_LOCATION =
-        new Translation2d(BASE_DIMENSIONS.getX() / -2.0 + EDGE,
-                          BASE_DIMENSIONS.getY() / 2.0 - EDGE);
-    public static final Translation2d RR_MODULE_LOCATION =
-        new Translation2d(BASE_DIMENSIONS.getX() / -2.0 + EDGE,
-                          BASE_DIMENSIONS.getY() / -2.0 + EDGE);                
+    public static final Translation2d[] POSITIONS = {
+        new Translation2d(BASE_DIMENSIONS.getX() / 2.0 - EDGE, BASE_DIMENSIONS.getY() / 2.0 - EDGE), // FL
+        new Translation2d(BASE_DIMENSIONS.getX() / 2.0 - EDGE, BASE_DIMENSIONS.getY() / -2.0 + EDGE), // FR
+        new Translation2d(BASE_DIMENSIONS.getX() / -2.0 + EDGE, BASE_DIMENSIONS.getY() / 2.0 - EDGE), // RL
+        new Translation2d(BASE_DIMENSIONS.getX() / -2.0 + EDGE, BASE_DIMENSIONS.getY() / -2.0 + EDGE)  // RR
+  };               
 }
