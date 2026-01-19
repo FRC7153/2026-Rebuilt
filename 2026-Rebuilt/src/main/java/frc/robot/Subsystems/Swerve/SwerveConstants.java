@@ -5,13 +5,15 @@ import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
-import com.revrobotics.spark.ClosedLoopSlot;
-import com.revrobotics.spark.config.ClosedLoopConfig;
-import com.revrobotics.spark.config.SparkBaseConfig;
-import com.revrobotics.spark.config.SparkFlexConfig;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.pathplanner.lib.util.FlippingUtil;
 
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 
 public final class SwerveConstants {
@@ -59,17 +61,30 @@ public final class SwerveConstants {
         .withCurrentLimits(DRIVE_MOTOR_CURRENT_LIMITS)
         .withFeedback(DRIVE_ENCODER);
 
-    // Steer NEO 
+    // Steer Kraken x60 
     public static final double STEER_GEAR_RATIO = 150.0 / 7.0; //sds mk4i L1
 
-    public static final SparkBaseConfig STEER_CONFIG = new SparkFlexConfig()
-        .inverted(false)//TODO
-        .smartCurrentLimit(40)
-        .idleMode(IdleMode.kBrake)
-        .apply(new ClosedLoopConfig()
-            .pid(0.0, 0.0,0.0, ClosedLoopSlot.kSlot0)
-            .positionWrappingInputRange(-0.5 * STEER_GEAR_RATIO, 0.5 * STEER_GEAR_RATIO)
-            .positionWrappingEnabled(true));
+    private static final Slot0Configs STEER_MOTOR_GAINS = new Slot0Configs()
+        .withKP(0.0).withKI(0.0).withKD(0.0).withKS(0.0)
+        .withKV(0.0).withKA(0.0);//TODO
+
+    private static final CurrentLimitsConfigs STEER_MOTOR_CURRENT_LIMITS =
+        new CurrentLimitsConfigs()
+            .withSupplyCurrentLimit(20)
+            .withSupplyCurrentLimitEnable(true)
+            .withStatorCurrentLimit(40)
+            .withStatorCurrentLimitEnable(true);//TODO
+
+    private static final FeedbackConfigs STEER_ENCODER = new FeedbackConfigs()
+        .withSensorToMechanismRatio(STEER_GEAR_RATIO);
+
+    public static final TalonFXConfiguration STEER_CONFIG = new TalonFXConfiguration()
+        .withSlot0(STEER_MOTOR_GAINS)
+        .withCurrentLimits(STEER_MOTOR_CURRENT_LIMITS)
+        .withFeedback(STEER_ENCODER);
+
+    // Odometry
+    public static final Matrix<N3, N1> STATE_STD_DEVS = VecBuilder.fill(0.4, 0.4, 0.01); //TODO
 
     //Base size
     public static final Translation2d BASE_DIMENSIONS = 
@@ -89,4 +104,8 @@ public final class SwerveConstants {
         new Translation2d(BASE_DIMENSIONS.getX() / -2.0 + EDGE, BASE_DIMENSIONS.getY() / 2.0 - EDGE), // RL
         new Translation2d(BASE_DIMENSIONS.getX() / -2.0 + EDGE, BASE_DIMENSIONS.getY() / -2.0 + EDGE)  // RR
   };               
+
+    // Default positions (against the front reef), if none is set by the auto program by PREGAME
+    public static final Pose2d DEFAULT_BLUE_POSE = new Pose2d(3.6 - (BASE_DIMENSIONS.getX() / 2.0) - BUMPER_WIDTH, 4.026, Rotation2d.kZero);//TODO
+    public static final Pose2d DEFAULT_RED_POSE = FlippingUtil.flipFieldPose(DEFAULT_BLUE_POSE);//TODO
 }

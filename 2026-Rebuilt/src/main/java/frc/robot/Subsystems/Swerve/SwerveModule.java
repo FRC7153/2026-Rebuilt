@@ -1,30 +1,30 @@
 package frc.robot.Subsystems.Swerve;
 
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.revrobotics.PersistMode;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.ResetMode;
-import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
-
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.DoublePublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
+import edu.wpi.first.wpilibj.DataLogManager;
 import frc.robot.Constants.HardwareConstants;
+import frc.robot.Util.Dashboard.HardwareFaultTracker;
 
 public class SwerveModule {
     private final String name; 
@@ -38,7 +38,7 @@ public class SwerveModule {
     private final StatusSignal<AngularVelocity> driveVelocity;
     private final StatusSignal<Current> driveCurrent;
 
-    private final VelocityVoltage driveVelocitRequest = new VelocityVoltage(null)
+    private final VelocityVoltage driveVelocityRequest = new VelocityVoltage(null)
         .withOverrideBrakeDurNeutral(true)
         .withSlot(0);
     private final VoltageOut driveVoltageRequest = new VoltageOut(0.0)
@@ -49,13 +49,27 @@ public class SwerveModule {
 
 
     //Steer Hardware
-    private final SparkMax steerMotor;
-    private final SparkClosedLoopController steerPID;
-    private final RelativeEncoder steerBuiltInEncoder;
+    private final TalonFX steerMotor;
+    private final StatusSignal<AngularVelocity> steerVelocity;
+    private final StatusSignal<Current> steerCurrent;
     private boolean hasBuiltInEncoderHomed = false;
+    private final StatusSignal<Angle> steerBuiltInAngle;
 
+    private final VoltageOut steerAngleRequest = new VoltageOut(0.0)
+        .withOverrideBrakeDurNeutral(true);
+    private final PositionVoltage steerPositionRequest = new PositionVoltage(0.0)
+        .withOverrideBrakeDurNeutral(true)
+        .withSlot(0);
+    private final DutyCycleOut steerDutyCycleRequest = new DutyCycleOut(0.0)
+        .withOverrideBrakeDurNeutral(true);
+    private final StaticBrake steerBrakeRequest = new StaticBrake();
+
+    
+
+    //CANCoder
     private final CANcoder steerCANCoder;
     private final StatusSignal<Angle> steerAngle;
+    
 
     /** State (for logging) */
     public final SwerveModuleState state = new SwerveModuleState();
@@ -100,10 +114,159 @@ public class SwerveModule {
         steerAngle = steerCANCoder.getAbsolutePosition();
 
         //Initialize Steer Motor
-        steerMotor = new SparkMax(steerMotorID, MotorType.kBrushless);
-        steerMotor.configure(SwerveConstants.STEER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        steerMotor = new TalonFX(steerEncoderID, HardwareConstants.CANIVORE);
 
-        steerBuiltInEncoder = steerMotor.getEncoder();
+        steerMotor.getConfigurator().apply(SwerveConstants.STEER_CONFIG);
+        steerVelocity = steerMotor.getVelocity();
+        steerCurrent = steerMotor.getStatorCurrent();
+        steerBuiltInAngle = steerMotor.getPosition();
 
+        //Default State
+        setBrakeMode(true);
+        setRequest(new SwerveModuleState(), true);
+
+        // Initialize Logging
+        currentLog = new DoubleLogEntry(DataLogManager.getLog(), "Swerve/Currents/" + name);
+
+        NetworkTable nt = NetworkTableInstance.getDefault().getTable("Swerve/Currents");
+        currentPub = nt.getDoubleTopic(name).publish();
     }
+
+
+    public StatusSignal<Angle> getDrivePosition() {
+        return drivePosition.clone();
+    }
+
+
+    public StatusSignal<Angle> getSteerAngle() {
+        return steerAngle.clone();
+    }
+    /**
+     * Homes the steer Kraken's built in relative encoder.
+     */
+    public void homeEncoder() {
+        steerAngle.refresh();
+            System.out.printf(
+      "SwerveModule %s homed from %f deg to %f deg.\n",
+        name,
+        steerBuiltInAngle.getValueAsDouble() / SwerveConstants.STEER_GEAR_RATIO * 360.0,
+        steerAngle.getValueAsDouble() * 360.0
+    );
+
+        StatusCode resp = steerMotor.setPosition(steerAngle.getValueAsDouble() * SwerveConstants.STEER_GEAR_RATIO);
+        steerNotHomedAlert.set(!resp.isOK());
+        hasBuiltInEncoderHomed = resp.isOK();
+    }
+
+    public void setBrakeMode(boolean brake) {
+        steerMotor.setNeutralMode(brake ? NeutralModeValue.Brake : NeutralModeValue.Coast);
+        driveMotor.setNeutralMode(brake ? NeutralModeValue.Brake : NeutralModeValue.Coast);
+    }
+    public void setRequest(SwerveModuleState request, boolean closedLoop) {
+        //Do not run if Kraken's built in encoder is not homed
+        if (!hasBuiltInEncoderHomed) return;
+
+        //Optimize State
+        double initialVelocity = request.speedMetersPerSecond;
+        steerAngle.refresh();
+        Rotation2d currentAngle = Rotation2d.fromRotations(steerAngle.getValueAsDouble());
+        request.optimize(currentAngle);
+        request.cosineScale(currentAngle);
+        lastStateRequest = request;
+
+        if (Math.abs(initialVelocity) < 0.01) {
+            // No Movement, apply deadband
+            driveMotor.setControl(driveBrakeRequest);
+        } else {
+            // Set Angle
+            steerMotor.setControl(steerPositionRequest.withPosition(
+                request.angle.getRotations()
+            ));
+
+
+
+            if (closedLoop) {
+                // Closed Loop Velocity Control (Auto)
+                driveMotor.setControl(driveVelocityRequest.withVelocity(
+                    request.speedMetersPerSecond / SwerveConstants.WHEEL_CIRCUMFERENCE
+                ));
+            } else {
+                // Open Loop Voltage Control (Teleop)
+                driveMotor.setControl(driveDutyCycleRequest.withOutput(
+                    request.speedMetersPerSecond / SwerveConstants.MAX_WHEEL_VELOCITY
+                ));
+            }
+        }
+    }
+
+    /**
+     * Steer heading will default to 0.0 degrees (straight forward)
+     * @param voltage Voltage request (for characterization)
+     */
+    public void setVoltageRequest(double voltage){
+        driveMotor.setControl(driveVoltageRequest.withOutput(voltage));
+        steerMotor.setControl(steerPositionRequest.withPosition(0.0));
+    }
+
+    /**
+     * Runs both motors at the given duty cycle (for testing)
+     * @param dutyCycle -1.0 to 1.0 (%)
+     */
+    public void runAllAtDutyCycle(double dutyCycle) {
+        driveMotor.setControl(driveDutyCycleRequest.withOutput(dutyCycle));
+        steerMotor.setControl(steerDutyCycleRequest.withOutput(dutyCycle));
+    }
+
+    /**
+     * Sets both motors to brake mode
+     */
+    public void staticBrakeRequest() {
+        driveMotor.setControl(driveBrakeRequest);
+        lastStateRequest = new SwerveModuleState();
+    }
+
+    /**
+     * Sets the steer motor to a voltage output (for characterization)
+     * @param voltage Voltage output
+     */
+    public void setSteerVoltage(double voltage) {
+        driveMotor.setControl(driveBrakeRequest);
+        steerMotor.setControl(steerAngleRequest.withOutput(voltage));
+    }
+
+    /**
+     * This will UPDATE the CURRENT STATE {@code this.state} in place, and RETURN the REQUESTED STATE.
+     * @return The last requested state via {@code setRequest()}
+     */
+    public SwerveModuleState getAndUpdateStates(){
+        //Refresh Signals
+        driveVelocity.refresh();
+        steerAngle.refresh();
+
+        //Update State
+        state.angle = Rotation2d.fromRotations(steerAngle.getValueAsDouble());
+        state.speedMetersPerSecond = driveVelocity.getValueAsDouble() * SwerveConstants.WHEEL_CIRCUMFERENCE;
+
+        // Return last request
+        return lastStateRequest;
+    }
+
+    public void log(){
+        driveCurrent.refresh();
+        currentLog.append(driveCurrent.getValueAsDouble());
+        currentPub.set(driveCurrent.getValueAsDouble());
+    }
+
+    public void checkHardware(){
+        //Check Drive Motor
+        HardwareFaultTracker.checkFault(driveMotorAlert, !driveMotor.isAlive() || !driveMotor.isConnected());
+
+        // Check Steer Motor Faults
+        HardwareFaultTracker.checkFault(steerMotorAlert, !steerMotor.isAlive() || !steerMotor.isConnected());
+
+        // Check Steer CANCoder Faults
+        HardwareFaultTracker.checkFault(steerCANCoderAlert, !steerCANCoder.isConnected());
+    }
+
+
 }

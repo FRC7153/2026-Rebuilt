@@ -4,17 +4,58 @@
 
 package frc.robot;
 
+import com.ctre.phoenix6.SignalLogger;
+
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.util.WPILibVersion;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.Constants.HardwareConstants;
+import frc.robot.Util.Utils;
+import frc.robot.Util.Dashboard.HardwareFaultTracker;
+import frc.robot.Util.Logging.CANLogger;
+import frc.robot.Util.Logging.ConsoleLogger;
 
-public class Robot extends TimedRobot {
+public final class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
+  private final CANLogger m_canLogger;
 
   public Robot() {
-    m_robotContainer = new RobotContainer();
+    ConsoleLogger.init();
+    System.out.printf("Built with WPILib %s\n", WPILibVersion.Version);
+
+    // Configure CTRE SignalLogger
+    SignalLogger.enableAutoLogging(false);
+    SignalLogger.stop();
+    SignalLogger.setPath("/u/CTRE_Signal_Logger");
+
+    // Init logging
+    DataLogManager.logNetworkTables(true);
+    DataLogManager.logConsoleOutput(true); // this is sometimes garbled
+
+    DriverStation.startDataLog(DataLogManager.getLog(), true);
+    NetworkTableInstance.getDefault().startConnectionDataLog(DataLogManager.getLog(), "NTConnections");
+
+    // Init CAN logging
+    m_canLogger = new CANLogger(HardwareConstants.RIO_CAN, HardwareConstants.CANIVORE);
+    m_canLogger.start();
+
+    // Init robot base
+    m_robotContainer = Utils.timeInstantiation(RobotContainer::new);
+
+    // Add logging periodic
+    addPeriodic(m_robotContainer::log, 0.1, 0.001); // every 100 ms
+    addPeriodic(m_robotContainer::checkHardware, 0.5, 0.001); // every 500 ms
+
+    // Init hardware fault tracker
+    HardwareFaultTracker.robotProgramHasStarted();
+
+    System.out.println("Robot constructor finished");
   }
 
   @Override
@@ -23,7 +64,9 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    System.out.println("DISABLED mode set");
+  }
 
   @Override
   public void disabledPeriodic() {}
@@ -33,10 +76,13 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
+    System.out.println("AUTONOMOUS mode set");
+
+    // Run auto command
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     if (m_autonomousCommand != null) {
-      CommandScheduler.getInstance().schedule(m_autonomousCommand);
+      m_autonomousCommand.schedule();
     }
   }
 
@@ -44,13 +90,18 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {}
 
   @Override
-  public void autonomousExit() {}
+  public void autonomousExit() {
+    // Cancel auto
+    if (m_autonomousCommand != null) {
+      m_autonomousCommand.cancel();
+      m_autonomousCommand = null;
+    }
+  }
 
   @Override
   public void teleopInit() {
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.cancel();
-    }
+    System.out.println("TELEOP mode set");
+
   }
 
   @Override

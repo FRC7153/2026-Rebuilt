@@ -4,15 +4,53 @@
 
 package frc.robot;
 
+import java.util.function.Supplier;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Commands.TeleopDriveCommand;
+import frc.robot.Subsystems.Swerve.SwerveDrive;
+import frc.robot.Util.Utils;
 
 public class RobotContainer {
+  // Controllers
+  private final CommandXboxController baseController = new CommandXboxController(0);
+  private final CommandXboxController armsController = new CommandXboxController(1);
+
+  //Subsystems
+  private final SwerveDrive base = Utils.timeInstantiation(() -> new SwerveDrive(baseController::setRumble));
+
   public RobotContainer() {
     configureBindings();
   }
 
-  private void configureBindings() {}
+  private void configureBindings() {
+    final Supplier<Double> baseLeftX = () -> -baseController.getLeftX();
+    final Supplier<Double> baseLeftY = () -> -baseController.getLeftY();
+    final Supplier<Double> baseRightX = () -> -baseController.getRightX();
+    final Trigger fastModeTrigger = baseController.leftTrigger();
+
+    base.setDefaultCommand(
+      new TeleopDriveCommand(
+        base,
+        baseLeftX, 
+        baseLeftY, 
+        baseRightX, 
+        fastModeTrigger, 
+        baseController.leftBumper(),
+        baseController.rightBumper()
+    ));
+  }
+
+  public void checkHardware(){
+    base.checkHardware();
+  }
+
+  public void log(){
+    base.log();
+  }
 
   public Command getAutonomousCommand() {
     return Commands.print("No autonomous command configured");
