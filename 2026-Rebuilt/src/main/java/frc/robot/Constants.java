@@ -8,7 +8,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 public class Constants {
     public class BuildConstants {
         public static final boolean PUBLISH_EVERYTHING = true;
-        public static final boolean INCLUDE_TEST_AUTOS = false;
+        public static final boolean INCLUDE_TEST_AUTOS = true;
 
         public static final AprilTagFieldLayout FIELD =
             AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);//TODO 

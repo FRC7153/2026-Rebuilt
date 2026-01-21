@@ -38,7 +38,7 @@ public class SwerveModule {
     private final StatusSignal<AngularVelocity> driveVelocity;
     private final StatusSignal<Current> driveCurrent;
 
-    private final VelocityVoltage driveVelocityRequest = new VelocityVoltage(null)
+    private final VelocityVoltage driveVelocityRequest = new VelocityVoltage(0.0)
         .withOverrideBrakeDurNeutral(true)
         .withSlot(0);
     private final VoltageOut driveVoltageRequest = new VoltageOut(0.0)
