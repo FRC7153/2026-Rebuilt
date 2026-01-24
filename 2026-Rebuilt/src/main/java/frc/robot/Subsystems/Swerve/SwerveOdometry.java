@@ -41,7 +41,9 @@ public class SwerveOdometry {
   private volatile double yVelo = 0.0;
   private volatile double jerk = 0.0;
 
-  private Pigeon2 pigeon;
+  private Pigeon2 pigeon = new Pigeon2(
+    HardwareConstants.PIGEON_CAN_ID, HardwareConstants.CANIVORE
+  );
 
   private final SwerveModulePosition[] swervePositions;
   private final BaseStatusSignal[] allSignals;
