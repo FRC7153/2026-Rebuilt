@@ -28,7 +28,7 @@ public final class SwerveConstants {
     public static final double SLOW_ROTATIONAL_SPEED = 8.5; // rad/s
 
     // CANCODER Offsets (in rotations, CCW+, -0.5 to 0.5 range)
-    public static final double FL_CANCODER_OFFSET = -0.264160;//TODO
+    public static final double FL_CANCODER_OFFSET = -0.249268;//TODO
     public static final double FR_CANCODER_OFFSET = -0.264160;//TODO
     public static final double RL_CANCODER_OFFSET = -0.260742;//TODO
     public static final double RR_CANCODER_OFFSET = -0.399568;//TODO
