@@ -182,9 +182,6 @@ public class SwerveModule {
             steerMotor.setControl(steerPositionRequest.withPosition(
                 request.angle.getRotations()
             ));
-
-
-
             if (closedLoop) {
                 // Closed Loop Velocity Control (Auto)
                 driveMotor.setControl(driveVelocityRequest.withVelocity(

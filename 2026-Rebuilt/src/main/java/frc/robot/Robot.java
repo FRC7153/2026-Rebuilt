@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.util.WPILibVersion;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants.HardwareConstants;
+import frc.robot.Commands.PregameCommand;
 import frc.robot.Util.Utils;
 import frc.robot.Util.Dashboard.HardwareFaultTracker;
 import frc.robot.Util.Logging.CANLogger;
@@ -77,7 +78,12 @@ public final class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     System.out.println("AUTONOMOUS mode set");
-
+    // Check pregame
+    if (!PregameCommand.getHasPregamed()) {
+      ConsoleLogger.reportError("No pregame before autonomousInit()!");
+      m_robotContainer.getPregameCommand().schedule();
+    }
+    
     // Run auto command
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 

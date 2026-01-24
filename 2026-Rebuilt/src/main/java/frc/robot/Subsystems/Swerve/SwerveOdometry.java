@@ -55,7 +55,6 @@ public class SwerveOdometry {
   private boolean hasSetInitialPosition = false; // Set later
 
   private StatusSignal<Angle> pigeonYaw = pigeon.getYaw();
-  private double yawValue = pigeonYaw.getValueAsDouble();
 
   private final Alert pigeonAlert = new Alert("Pigeon Alert", AlertType.kError);
 
@@ -68,6 +67,8 @@ public class SwerveOdometry {
     // Init thread
     thread = new Thread(this::run);
     thread.setDaemon(true);
+    pigeonYaw.refresh();
+
 
 //Init Pigeon 2.0
 
@@ -94,7 +95,7 @@ public class SwerveOdometry {
     // Init pose estimator
     poseEstimator = new SwerveDrivePoseEstimator(
       kinematics, 
-      Rotation2d.fromDegrees(yawValue), 
+      Rotation2d.fromDegrees(pigeonYaw.getValueAsDouble()), 
       swervePositions, 
       Pose2d.kZero,
       SwerveConstants.STATE_STD_DEVS, // State std devs TODO
@@ -126,7 +127,7 @@ public class SwerveOdometry {
     try {
       stateLock.writeLock().lock();
       poseEstimator.resetPosition(
-        Rotation2d.fromDegrees(yawValue), 
+        Rotation2d.fromDegrees(pigeonYaw.getValueAsDouble()), 
         swervePositions, // this should be updated in place
         newPosition);
     } finally {
@@ -140,6 +141,7 @@ public class SwerveOdometry {
     // Init update frequency
     BaseStatusSignal.setUpdateFrequencyForAll(UPDATE_FREQ, allSignals);
     Threads.setCurrentThreadPriority(true, 1); // Priority 1
+    pigeonYaw.refresh();
 
     LinearFilter freqFilter = LinearFilter.movingAverage(10);
 
@@ -170,7 +172,7 @@ public class SwerveOdometry {
 
         // Update estimator
         poseEstimator.update(
-          Rotation2d.fromDegrees(yawValue), 
+          Rotation2d.fromDegrees(pigeonYaw.getValueAsDouble()), 
           swervePositions);
 
         Pose2d newPose = poseEstimator.getEstimatedPosition();

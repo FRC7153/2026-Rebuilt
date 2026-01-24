@@ -13,6 +13,11 @@ public class Constants {
         public static final AprilTagFieldLayout FIELD =
             AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);//TODO 
     }
+
+    public class DashboardConstants {
+        public static final int ELASTIC_SERVER_PORT = 5800;
+    }
+    
     public class HardwareConstants {
         // Swerve Hardware CAN IDs
         public final static int FR_DRIVE_CAN = 1;

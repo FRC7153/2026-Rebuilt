@@ -6,13 +6,20 @@ package frc.robot;
 
 import java.util.function.Supplier;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Commands.PregameCommand;
 import frc.robot.Commands.TeleopDriveCommand;
+import frc.robot.Constants.DashboardConstants;
+import frc.robot.Libs.Elastic;
 import frc.robot.Subsystems.Swerve.SwerveDrive;
 import frc.robot.Util.Utils;
+import frc.robot.Util.Dashboard.AutoChooser;
+import frc.robot.Util.Dashboard.Dashboard;
 
 public class RobotContainer {
   // Controllers
@@ -22,11 +29,23 @@ public class RobotContainer {
   //Subsystems
   private final SwerveDrive base = Utils.timeInstantiation(() -> new SwerveDrive(baseController::setRumble));
 
+  // Auto
+  private final AutoChooser auto = new AutoChooser(base);
+  private final Dashboard dashboard = new Dashboard(baseController, armsController);
+  private final Command pregameCommand = new PregameCommand(base, auto);
+
   public RobotContainer() {
+    SmartDashboard.putData("Pregame", pregameCommand);
     configureBindings();
   }
 
   private void configureBindings() {
+    //Triggers 
+    final Trigger isEnabledTrigger = new Trigger(DriverStation::isEnabled);
+    final Trigger isTestTrigger = new Trigger(DriverStation::isTestEnabled);
+    final Trigger isTeleopTrigger = new Trigger(DriverStation::isTeleopEnabled);
+
+    // Inverted/Comined inputs
     final Supplier<Double> baseLeftX = () -> -baseController.getLeftX();
     final Supplier<Double> baseLeftY = () -> -baseController.getLeftY();
     final Supplier<Double> baseRightX = () -> -baseController.getRightX();
@@ -35,24 +54,37 @@ public class RobotContainer {
     base.setDefaultCommand(
       new TeleopDriveCommand(
         base,
-        baseLeftX, 
         baseLeftY, 
+        baseLeftX, 
         baseRightX, 
         fastModeTrigger, 
         baseController.leftBumper(),
         baseController.rightBumper()
     ));
+
+    isEnabledTrigger
+      .onTrue(dashboard.getRestartTimerCommand())
+      .onFalse(dashboard.getStopTimerCommand());
+
+    isTeleopTrigger
+      .onTrue(new InstantCommand(() -> Elastic.selectTab(DashboardConstants.ELASTIC_SERVER_PORT)).ignoringDisable(true));
   }
 
   public void checkHardware(){
     base.checkHardware();
+    dashboard.checkHardware();
+  }
+
+  public Command getPregameCommand(){
+    return pregameCommand;
   }
 
   public void log(){
     base.log();
+    dashboard.update();
   }
 
   public Command getAutonomousCommand() {
-    return Commands.print("No autonomous command configured");
+    return auto.getCurrentSelectedCommand();
   }
 }
