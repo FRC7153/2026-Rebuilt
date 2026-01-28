@@ -42,7 +42,6 @@ public class RobotContainer {
   private void configureBindings() {
     //Triggers 
     final Trigger isEnabledTrigger = new Trigger(DriverStation::isEnabled);
-    final Trigger isTestTrigger = new Trigger(DriverStation::isTestEnabled);
     final Trigger isTeleopTrigger = new Trigger(DriverStation::isTeleopEnabled);
 
     // Inverted/Comined inputs

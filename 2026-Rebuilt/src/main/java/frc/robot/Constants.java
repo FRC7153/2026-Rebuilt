@@ -1,7 +1,11 @@
 package frc.robot;
 
 import com.ctre.phoenix6.CANBus;
-
+import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.config.ClosedLoopConfig;
+import com.revrobotics.spark.config.SparkBaseConfig;
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 
@@ -35,6 +39,10 @@ public class Constants {
         public final static int RL_CANCODER_CAN = 11;
         public final static int RR_CANCODER_CAN = 12;
 
+        // Cancoder CAN IDs
+        public static final int INTAKE_CAN = 13;
+        public static final int INTAKE_PIVOT_CAN = 14;
+
         // Pigeon 2.0
         public final static int PIGEON_CAN_ID = 20;
         // PDH Can ID
@@ -43,5 +51,31 @@ public class Constants {
         // CAN Busses
         public final static CANBus CANIVORE = new CANBus("CANivore");
         public final static CANBus RIO_CAN = new CANBus("rio");
+    }
+
+    public class IntakeConstants {
+        // Intake gear ratios
+        public static final double INTAKE_GEAR_RATIO = 1.0 / 1.0; //TODO
+                
+        public static final ClosedLoopConfig INTAKE_PIVOT_PID = new ClosedLoopConfig()
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .pid(0.0, 0.0, 0.0); //TODO
+        
+        public static final ClosedLoopConfig INTAKE_PID = new ClosedLoopConfig()
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .pid(0.0, 0.0, 0.0); //TODO
+        
+        // Intake Configs Neo vortex pivot 
+        public static final SparkBaseConfig INTAKE_PIVOT_CONFIG = new SparkFlexConfig()
+            .idleMode(IdleMode.kBrake)
+            .inverted(false)//TODO
+            .smartCurrentLimit(50)//TODO
+            .apply(INTAKE_PIVOT_PID);
+        
+        public static final SparkBaseConfig INTAKE_CONFIG = new SparkFlexConfig()
+            .idleMode(IdleMode.kBrake)
+            .inverted(false)//TODO
+            .smartCurrentLimit(50)// TODO
+            .apply(INTAKE_PID);
     }
 }

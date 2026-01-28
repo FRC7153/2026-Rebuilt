@@ -50,8 +50,6 @@ public class SwerveModule {
 
     //Steer Hardware
     private final TalonFX steerMotor;
-    private final StatusSignal<AngularVelocity> steerVelocity;
-    private final StatusSignal<Current> steerCurrent;
     private boolean hasBuiltInEncoderHomed = false;
     private final StatusSignal<Angle> steerBuiltInAngle;
 
@@ -62,10 +60,7 @@ public class SwerveModule {
         .withSlot(0);
     private final DutyCycleOut steerDutyCycleRequest = new DutyCycleOut(0.0)
         .withOverrideBrakeDurNeutral(true);
-    private final StaticBrake steerBrakeRequest = new StaticBrake();
-
-    
-
+        
     //CANCoder
     private final CANcoder steerCANCoder;
     private final StatusSignal<Angle> steerAngle;
@@ -117,8 +112,8 @@ public class SwerveModule {
         steerMotor = new TalonFX(steerMotorID, HardwareConstants.CANIVORE);
 
         steerMotor.getConfigurator().apply(SwerveConstants.STEER_CONFIG);
-        steerVelocity = steerMotor.getVelocity();
-        steerCurrent = steerMotor.getStatorCurrent();
+        steerMotor.getVelocity();
+        steerMotor.getStatorCurrent();
         steerBuiltInAngle = steerMotor.getPosition();
 
         //Default State
