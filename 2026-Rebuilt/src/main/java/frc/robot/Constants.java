@@ -1,6 +1,13 @@
 package frc.robot;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.ClosedLoopConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
@@ -43,6 +50,10 @@ public class Constants {
         public static final int INTAKE_CAN = 13;
         public static final int INTAKE_PIVOT_CAN = 14;
 
+        //Cancoder CAN IDs 
+        public static final int SHOOTER_CAN = 15;
+        public static final int KICKER_CAN = 16;
+
         // Pigeon 2.0
         public final static int PIGEON_CAN_ID = 20;
         // PDH Can ID
@@ -77,5 +88,47 @@ public class Constants {
             .inverted(false)//TODO
             .smartCurrentLimit(50)// TODO
             .apply(INTAKE_PID);
+    }
+    public class ShooterConstants {
+    // Shooter gear ratio 
+    public static final double SHOOTER_GEAR_RATIO = 1.0 / 1.0;
+
+    public static final Slot0Configs SHOOTER_GAINS = new Slot0Configs()
+        .withKP(0.2).withKI(0.0).withKD(0.0).withKS(0.2)
+        .withKV(0.12).withKA(0.0);//TODO
+
+    private static final CurrentLimitsConfigs SHOOTER_CURRENT_LIMITS_CONFIGS =
+        new CurrentLimitsConfigs()
+            .withSupplyCurrentLimit(60)
+            .withSupplyCurrentLimitEnable(true)
+            .withStatorCurrentLimit(80)
+            .withStatorCurrentLimitEnable(true);//TODO
+
+    private static final FeedbackConfigs SHOOTER_ENCODER_CONFIGS = new FeedbackConfigs()
+        .withSensorToMechanismRatio(SHOOTER_GEAR_RATIO);
+
+    private static final MotorOutputConfigs SHOOTER_OUTPUT_CONFIGS = new MotorOutputConfigs()
+        .withInverted(InvertedValue.Clockwise_Positive) //TODO
+        .withNeutralMode(NeutralModeValue.Brake);
+
+    public static final TalonFXConfiguration SHOOTER_CONFIG = new TalonFXConfiguration()
+        .withSlot0(SHOOTER_GAINS)
+        .withCurrentLimits(SHOOTER_CURRENT_LIMITS_CONFIGS)
+        .withFeedback(SHOOTER_ENCODER_CONFIGS)
+        .withMotorOutput(SHOOTER_OUTPUT_CONFIGS);
+    
+    private static final Slot0Configs KICKER_GAINS =new Slot0Configs()
+        .withKP(0.15).withKI(0.0).withKD(0.0)
+        .withKS(0.2).withKV(0.12).withKA(0.0);//TODO
+
+    private static final MotorOutputConfigs KICKER_OUTPUT_CONFIGS = new MotorOutputConfigs()
+        .withInverted(InvertedValue.Clockwise_Positive) //TODO
+        .withNeutralMode(NeutralModeValue.Brake); 
+
+    public static final TalonFXConfiguration KICKER_CONFIG = new TalonFXConfiguration()
+        .withSlot0(KICKER_GAINS)
+        .withCurrentLimits(SHOOTER_CURRENT_LIMITS_CONFIGS)
+        .withFeedback(SHOOTER_ENCODER_CONFIGS)
+        .withMotorOutput(KICKER_OUTPUT_CONFIGS);
     }
 }

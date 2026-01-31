@@ -13,9 +13,11 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Commands.PregameCommand;
+import frc.robot.Commands.ShootCommand;
 import frc.robot.Commands.TeleopDriveCommand;
 import frc.robot.Constants.DashboardConstants;
 import frc.robot.Libs.Elastic;
+import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Swerve.SwerveDrive;
 import frc.robot.Util.Utils;
 import frc.robot.Util.Dashboard.AutoChooser;
@@ -28,6 +30,7 @@ public class RobotContainer {
 
   //Subsystems
   private final SwerveDrive base = Utils.timeInstantiation(() -> new SwerveDrive(baseController::setRumble));
+  private final Shooter shooter = Utils.timeInstantiation(() -> new Shooter());
 
   // Auto
   private final AutoChooser auto = new AutoChooser(base);
@@ -64,6 +67,9 @@ public class RobotContainer {
     isEnabledTrigger
       .onTrue(dashboard.getRestartTimerCommand())
       .onFalse(dashboard.getStopTimerCommand());
+    
+    //baseController.rightTrigger()
+      //.whileTrue(new ShootCommand(shooter));
 
     isTeleopTrigger
       .onTrue(new InstantCommand(() -> Elastic.selectTab(DashboardConstants.ELASTIC_SERVER_PORT)).ignoringDisable(true));
@@ -81,6 +87,7 @@ public class RobotContainer {
   public void log(){
     base.log();
     dashboard.update();
+    //shooter.log(); TODO
   }
 
   public Command getAutonomousCommand() {
