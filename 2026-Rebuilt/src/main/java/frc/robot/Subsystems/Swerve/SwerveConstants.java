@@ -1,9 +1,13 @@
 package frc.robot.Subsystems.Swerve;
 
+import com.ctre.phoenix6.configs.ClosedLoopGeneralConfigs;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.pathplanner.lib.util.FlippingUtil;
 
@@ -28,23 +32,23 @@ public final class SwerveConstants {
     public static final double SLOW_ROTATIONAL_SPEED = 8.5; // rad/s
 
     // CANCODER Offsets (in rotations, CCW+, -0.5 to 0.5 range)
-    public static final double FL_CANCODER_OFFSET = -0.249268;//TODO
-    public static final double FR_CANCODER_OFFSET = -0.264160;//TODO
-    public static final double RL_CANCODER_OFFSET = -0.260742;//TODO
-    public static final double RR_CANCODER_OFFSET = -0.399568;//TODO
+    public static final double FL_CANCODER_OFFSET = (0.281006 - 0.25);//(0.283937 + 0.5);//TODO
+    public static final double FR_CANCODER_OFFSET = (-0.385986 + 0.25);//(0.497070 + 0.25);//TODO
+    public static final double RL_CANCODER_OFFSET = (-0.239258 + 0.25);//(-0.239014 + 0.5);//TODO
+    public static final double RR_CANCODER_OFFSET = (0.397705 - 0.25);//0.317383;//TODO
 
     public static final double CANCODER_RANGE = 0.5;
 
     public static final SensorDirectionValue CANCODER_DIRECTION =
-        SensorDirectionValue.Clockwise_Positive;
+        SensorDirectionValue.CounterClockwise_Positive;
 
     //Drive Kraken x60
     public static final double WHEEL_CIRCUMFERENCE = Units.inchesToMeters(4.0) * Math.PI; //meters
     public static final double DRIVE_GEAR_RATIO = 8.14; //sds mk4i L1
 
     private static final Slot0Configs DRIVE_MOTOR_GAINS = new Slot0Configs()
-        .withKP(0.3).withKI(0.0).withKD(0.0).withKS(0.0)
-        .withKV(0.0).withKA(0.0);//TODO
+        .withKP(1.0621).withKI(0.0).withKD(0.0).withKS(0.031235)
+        .withKV(0.955596).withKA(0.011144);//TODO
 
     private static final CurrentLimitsConfigs DRIVE_MOTOR_CURRENT_LIMITS =
         new CurrentLimitsConfigs()
@@ -56,17 +60,24 @@ public final class SwerveConstants {
     private static final FeedbackConfigs DRIVE_ENCODER = new FeedbackConfigs()
         .withSensorToMechanismRatio(DRIVE_GEAR_RATIO);
 
+    private static final MotorOutputConfigs DRIVE_MOTOR_OUTPUT_CONFIGS = new MotorOutputConfigs()
+        .withInverted(InvertedValue.Clockwise_Positive)
+        .withNeutralMode(NeutralModeValue.Brake);
+
     public static final TalonFXConfiguration DRIVE_CONFIG = new TalonFXConfiguration()
         .withSlot0(DRIVE_MOTOR_GAINS)
         .withCurrentLimits(DRIVE_MOTOR_CURRENT_LIMITS)
-        .withFeedback(DRIVE_ENCODER);
+        .withFeedback(DRIVE_ENCODER)
+        .withMotorOutput(DRIVE_MOTOR_OUTPUT_CONFIGS);
 
     // Steer Kraken x60 
     public static final double STEER_GEAR_RATIO = 150.0 / 7.0; //sds mk4i L1
 
     private static final Slot0Configs STEER_MOTOR_GAINS = new Slot0Configs()
-        .withKP(0.3).withKI(0.0).withKD(0.0).withKS(0.0)
-        .withKV(0.0).withKA(0.0);//TODO
+        .withKP(2.2).withKI(0.0).withKD(0.004);
+        
+        //.withKS(0.044027)
+        //.withKV(2.5082).withKA(0.024792);//TODO
 
     private static final CurrentLimitsConfigs STEER_MOTOR_CURRENT_LIMITS =
         new CurrentLimitsConfigs()
@@ -75,13 +86,22 @@ public final class SwerveConstants {
             .withStatorCurrentLimit(40)
             .withStatorCurrentLimitEnable(true);//TODO
 
+    private static final ClosedLoopGeneralConfigs STEER_CLOSED_LOOP_GENERAL_CONFIGS = new ClosedLoopGeneralConfigs()
+        .withContinuousWrap(true);
+
     private static final FeedbackConfigs STEER_ENCODER = new FeedbackConfigs()
         .withSensorToMechanismRatio(STEER_GEAR_RATIO);
+    
+    private static final MotorOutputConfigs STEER_MOTOR_OUTPUT_CONFIGS = new MotorOutputConfigs()
+        .withInverted(InvertedValue.Clockwise_Positive)
+        .withNeutralMode(NeutralModeValue.Brake);
 
     public static final TalonFXConfiguration STEER_CONFIG = new TalonFXConfiguration()
         .withSlot0(STEER_MOTOR_GAINS)
         .withCurrentLimits(STEER_MOTOR_CURRENT_LIMITS)
-        .withFeedback(STEER_ENCODER);
+        .withFeedback(STEER_ENCODER)
+        .withMotorOutput(STEER_MOTOR_OUTPUT_CONFIGS)
+        .withClosedLoopGeneral(STEER_CLOSED_LOOP_GENERAL_CONFIGS);
 
     // Odometry
     public static final Matrix<N3, N1> STATE_STD_DEVS = VecBuilder.fill(0.4, 0.4, 0.01); //TODO

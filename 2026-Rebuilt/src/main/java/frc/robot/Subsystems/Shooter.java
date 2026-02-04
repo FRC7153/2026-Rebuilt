@@ -1,5 +1,115 @@
 package frc.robot.Subsystems;
 
-public class Shooter {
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.controls.StaticBrake;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.networktables.DoublePublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.util.datalog.DoubleLogEntry;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.Constants.BuildConstants;
+import frc.robot.Constants.HardwareConstants;
+import frc.robot.Constants.ShooterConstants;
+
+public class Shooter implements Subsystem{
+    private final TalonFX shooter = new TalonFX(HardwareConstants.SHOOTER_CAN, HardwareConstants.CANIVORE);
+    private final TalonFX kicker = new TalonFX(HardwareConstants.KICKER_CAN, HardwareConstants.CANIVORE);
+
+    private final StaticBrake staticBrakeRequest = new StaticBrake();
+
+    private final StatusSignal<AngularVelocity> shooterVelo = shooter.getVelocity();
+    private final StatusSignal<AngularVelocity> kickerVelo = kicker.getVelocity();
+
+    private final VelocityVoltage shooterVeloRequest = new VelocityVoltage(0.0)
+        .withOverrideBrakeDurNeutral(true)
+        .withSlot(0);
+
+    private final VelocityVoltage kickerVeloRequest = new VelocityVoltage(0.0)
+        .withOverrideBrakeDurNeutral(true)
+        .withSlot(0);
+
+    // NT Logging 
+    private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub;
+
+    //Datalog
+    private final DoubleLogEntry shooterVeloLog = 
+        new DoubleLogEntry(DataLogManager.getLog(), "shooter/Velo", "RPS");
     
+    private final DoubleLogEntry kickerVeloLog = 
+        new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Velo", "RPS");
+
+    private final DoubleLogEntry kickerSetPointLog = 
+        new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Setpoint", "RPS");
+
+    private final DoubleLogEntry shooterSetPointLog = 
+        new DoubleLogEntry(DataLogManager.getLog(), "Shooter/Setpoint", "RPS");
+
+
+    public Shooter() {
+        shooter.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
+        kicker.getConfigurator().apply(ShooterConstants.KICKER_CONFIG);
+
+        if (BuildConstants.PUBLISH_EVERYTHING){
+            NetworkTable nt = NetworkTableInstance.getDefault().getTable("Shooter");
+            kickerVeloPub = nt.getDoubleTopic("kickerVelo").publish();
+            shooterVeloPub = nt.getDoubleTopic("shooterVelo").publish();
+            kickerSetPointPub = nt.getDoubleTopic("kickerSetpoint").publish();
+            shooterSetpointPub = nt.getDoubleTopic("shooterSetpoint").publish();
+        } else {
+            kickerVeloPub = null;
+            shooterVeloPub = null;
+        }
+    }
+
+
+    public void setShooterSpeed(double velo) {
+        velo = MathUtil.clamp(velo, 0.0, 100); //TODO
+
+        shooter.setControl(
+            shooterVeloRequest.withVelocity(velo).withSlot(0)
+            );
+        shooterSetPointLog.append(velo);
+
+        if (BuildConstants.PUBLISH_EVERYTHING) {
+            shooterSetpointPub.set(velo);
+        }
+    }
+
+    public void setKickerSpeed (double velo) {
+        velo = MathUtil.clamp(velo, 0.0, 100);//TODO
+
+        kicker.setControl(
+            kickerVeloRequest.withVelocity(velo).withSlot(0)
+            );
+
+        kickerSetPointLog.append(velo);
+
+        if (BuildConstants.PUBLISH_EVERYTHING){
+            kickerSetPointPub.set(velo);
+        }
+    }
+
+    public void stopShooterSub() {
+        shooter.setControl(staticBrakeRequest);
+        kicker.setControl(kickerVeloRequest);
+    }
+
+    public void log() {
+        shooterVelo.refresh();
+        kickerVelo.refresh();
+
+        shooterVeloLog.append(shooterVelo.getValueAsDouble());
+        kickerVeloLog.append(kickerVelo.getValueAsDouble());
+
+        if (BuildConstants.PUBLISH_EVERYTHING) {
+            shooterVeloPub.set(shooterVelo.getValueAsDouble());
+            kickerVeloPub.set(kickerVelo.getValueAsDouble());
+        }
+    }
 }

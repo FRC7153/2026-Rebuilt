@@ -43,6 +43,8 @@ public class AutoChooser {
     // Starting Positions //TODO 
 
         // Autos that are used for testing
+    chooser.addOption("No Auto", Pair.of(null, () -> noOpCommand));
+    
     if (BuildConstants.INCLUDE_TEST_AUTOS) {
       // Add Swerve SysId drive autos
       chooser.addOption("SYSID Swerve Drive Q+", 

@@ -47,11 +47,11 @@ public class SwerveModule {
         .withOverrideBrakeDurNeutral(true);
     private final StaticBrake driveBrakeRequest = new StaticBrake();
 
+    //Offset
+    double correctedRot;
 
     //Steer Hardware
     private final TalonFX steerMotor;
-    private final StatusSignal<AngularVelocity> steerVelocity;
-    private final StatusSignal<Current> steerCurrent;
     private boolean hasBuiltInEncoderHomed = false;
     private final StatusSignal<Angle> steerBuiltInAngle;
 
@@ -62,10 +62,7 @@ public class SwerveModule {
         .withSlot(0);
     private final DutyCycleOut steerDutyCycleRequest = new DutyCycleOut(0.0)
         .withOverrideBrakeDurNeutral(true);
-    private final StaticBrake steerBrakeRequest = new StaticBrake();
-
-    
-
+        
     //CANCoder
     private final CANcoder steerCANCoder;
     private final StatusSignal<Angle> steerAngle;
@@ -117,8 +114,8 @@ public class SwerveModule {
         steerMotor = new TalonFX(steerMotorID, HardwareConstants.CANIVORE);
 
         steerMotor.getConfigurator().apply(SwerveConstants.STEER_CONFIG);
-        steerVelocity = steerMotor.getVelocity();
-        steerCurrent = steerMotor.getStatorCurrent();
+        steerMotor.getVelocity();
+        steerMotor.getStatorCurrent();
         steerBuiltInAngle = steerMotor.getPosition();
 
         //Default State
@@ -146,13 +143,13 @@ public class SwerveModule {
      */
     public void homeEncoder() {
         steerAngle.refresh();
+
             System.out.printf(
       "SwerveModule %s homed from %f deg to %f deg.\n",
         name,
         steerBuiltInAngle.getValueAsDouble() / SwerveConstants.STEER_GEAR_RATIO * 360.0,
         steerAngle.getValueAsDouble() * 360.0
     );
-
         StatusCode resp = steerMotor.setPosition(steerAngle.getValueAsDouble() * SwerveConstants.STEER_GEAR_RATIO);
         steerNotHomedAlert.set(!resp.isOK());
         hasBuiltInEncoderHomed = resp.isOK();
@@ -180,7 +177,7 @@ public class SwerveModule {
         } else {
             // Set Angle
             steerMotor.setControl(steerPositionRequest.withPosition(
-                request.angle.getRotations()
+                request.angle.getRotations() * SwerveConstants.STEER_GEAR_RATIO
             ));
             if (closedLoop) {
                 // Closed Loop Velocity Control (Auto)

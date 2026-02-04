@@ -115,9 +115,9 @@ public final class SwerveDrive implements Subsystem {
     // Pose Estimation
     protected final SwerveOdometry odometry = new SwerveOdometry(modules, kinematics);
     private final BiConsumer<RumbleType, Double> hapticFeedbackAcceptor;
-// Autonomous
-  protected final RobotConfig autoConfig;
-  private final Alert failedToLoadConfigAlert = new Alert("Failed to load PathPlanner's config", AlertType.kError);
+    // Autonomous
+    protected final RobotConfig autoConfig;
+    private final Alert failedToLoadConfigAlert = new Alert("Failed to load PathPlanner's config", AlertType.kError);
 
   /**
    * @param hapticFeedbackAcceptor Function to accept haptic feedback (controller vibration) on
