@@ -53,6 +53,7 @@ public class Constants {
         //Cancoder CAN IDs 
         public static final int SHOOTER_CAN = 15;
         public static final int KICKER_CAN = 16;
+        public static final int SHOOTER_2_CAN = 17;
 
         // Pigeon 2.0
         public final static int PIGEON_CAN_ID = 20;

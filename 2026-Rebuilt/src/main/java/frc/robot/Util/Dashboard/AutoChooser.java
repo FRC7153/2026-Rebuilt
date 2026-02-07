@@ -15,8 +15,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import frc.robot.Constants.BuildConstants;
 import frc.robot.Commands.SysID.SysIdCharacterizationCommand;
-import frc.robot.Subsystems.Swerve.SwerveDrive;
-import frc.robot.Subsystems.Swerve.SwerveSysID;
+import frc.robot.Subsystems.Shooter;
+import frc.robot.Subsystems.Swerve.CommandSwerveDrivetrain;
+
 import frc.robot.Util.Utils;
 import frc.robot.Util.Logging.ConsoleLogger;
 
@@ -27,12 +28,14 @@ public class AutoChooser {
     private final SendableChooser<Pair<Pose2d, Supplier<Command>>> chooser = new SendableChooser<>();
     private Command currentLoadedCommand = null;
 
-    private final SwerveDrive drive;
+    private final CommandSwerveDrivetrain drive;
+    private final Shooter shooter;
 
     private final Alert noAutoLoadedAlert = new Alert("No auto loaded yet (run pregame)", AlertType.kInfo);
 
-    public AutoChooser(SwerveDrive drive) {
+    public AutoChooser(CommandSwerveDrivetrain drive, Shooter shooter) {
         this.drive = drive;
+        this.shooter = shooter;
 
     // On change
     chooser.onChange((Pair<Pose2d, Supplier<Command>> newAuto) -> {
@@ -42,10 +45,23 @@ public class AutoChooser {
 
     // Starting Positions //TODO 
 
-        // Autos that are used for testing
+    // Autos that are used for testing
     chooser.addOption("No Auto", Pair.of(null, () -> noOpCommand));
+
+    chooser.addOption("SYSID Shooter Q+", 
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), true, true)));
+
+    chooser.addOption("SYSID Shooter Q-", 
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), true, false)));
+
+    chooser.addOption("SYSID Shooter D+", 
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), false, true)));
+
+    chooser.addOption("SYSID Shooter D-", 
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), false, false)));
+
     
-    if (BuildConstants.INCLUDE_TEST_AUTOS) {
+    /**if (BuildConstants.INCLUDE_TEST_AUTOS) {
       // Add Swerve SysId drive autos
       chooser.addOption("SYSID Swerve Drive Q+", 
       Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleDriveRoutine(drive), true, true)));
@@ -65,8 +81,9 @@ public class AutoChooser {
         Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleSteerRoutine(drive), false, true)));
       chooser.addOption("SYSID Swerve Steer D-", 
         Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleSteerRoutine(drive), false, false)));
-    }
+    } 
 
+    */
     // Add the chooser to the dashboard
     SmartDashboard.putData("Auto", chooser);
     noAutoLoadedAlert.set(true);
@@ -81,13 +98,6 @@ public class AutoChooser {
         System.out.printf("New auto loaded: %s\n", currentLoadedCommand.getName());
         noAutoLoadedAlert.set(false);
 
-        // Reset position if disabled
-        if (DriverStation.isDisabled() && selected.getFirst() != null) {
-        Pose2d startPose = (Utils.isRedAlliance()) ? FlippingUtil.flipFieldPose(selected.getFirst()) : selected.getFirst();
-        drive.resetOdometry(startPose);
-        } else if (selected.getFirst() == null) {
-        ConsoleLogger.reportWarning("Loaded auto does not specify a starting position.");
-        }
     } 
 
     public Command getCurrentSelectedCommand(){
