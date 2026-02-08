@@ -19,7 +19,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Commands.ShootCommand;
 import frc.robot.Constants.DashboardConstants;
 import frc.robot.Libs.Elastic;
@@ -33,7 +33,7 @@ import frc.robot.Util.Dashboard.Dashboard;
 
 public class RobotContainer {
   private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-  private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+  private double MaxAngularRate = RotationsPerSecond.of(0.5).in(RadiansPerSecond); // 1/2 of a rotation per second max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -101,6 +101,15 @@ public class RobotContainer {
       .onTrue(new InstantCommand(() -> Elastic.selectTab(DashboardConstants.ELASTIC_SERVER_PORT)).ignoringDisable(true));
 
     baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+    baseController.leftBumper().and(baseController.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+    baseController.leftBumper().and(baseController.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+    baseController.rightBumper().and(baseController.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+    baseController.rightBumper().and(baseController.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+
+    baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }

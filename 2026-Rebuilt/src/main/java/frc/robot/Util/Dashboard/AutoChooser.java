@@ -60,7 +60,7 @@ public class AutoChooser {
     chooser.addOption("SYSID Shooter D-", 
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), false, false)));
 
-    
+      
     /**if (BuildConstants.INCLUDE_TEST_AUTOS) {
       // Add Swerve SysId drive autos
       chooser.addOption("SYSID Swerve Drive Q+", 

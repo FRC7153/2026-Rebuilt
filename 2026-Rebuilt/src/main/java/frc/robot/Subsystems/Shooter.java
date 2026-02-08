@@ -8,15 +8,18 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VelocityVoltage;
-import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
+import com.revrobotics.PersistMode;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
@@ -30,22 +33,16 @@ import frc.robot.Constants.ShooterConstants;
 public class Shooter implements Subsystem{
     private final TalonFX shooter = new TalonFX(HardwareConstants.SHOOTER_CAN, HardwareConstants.CANIVORE);
     private final TalonFX shooter2 = new TalonFX(HardwareConstants.SHOOTER_2_CAN, HardwareConstants.CANIVORE);
-    private final TalonFX kicker = new TalonFX(HardwareConstants.KICKER_CAN, HardwareConstants.CANIVORE);
-
+    private final SparkFlex kicker = new SparkFlex(HardwareConstants.KICKER_CAN, MotorType.kBrushless);
+    private final RelativeEncoder kickerRelativeEncoder = kicker.getEncoder();
+    
     private final StaticBrake staticBrakeRequest = new StaticBrake();
 
     private final StatusSignal<AngularVelocity> shooterVelo = shooter.getVelocity();
-    private final StatusSignal<AngularVelocity> kickerVelo = kicker.getVelocity();
 
     private final VelocityVoltage shooterVeloRequest = new VelocityVoltage(0.0)
         .withOverrideBrakeDurNeutral(true)
         .withSlot(0);
-
-    private final VelocityVoltage kickerVeloRequest = new VelocityVoltage(0.0)
-        .withOverrideBrakeDurNeutral(true)
-        .withSlot(0);
-
-    private final VoltageOut voltageRequest = new VoltageOut(0.0);
 
     private static SysIdRoutine shooterRoutine;
     
@@ -68,7 +65,7 @@ public class Shooter implements Subsystem{
     
         public Shooter() {
             shooter.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
-            kicker.getConfigurator().apply(ShooterConstants.KICKER_CONFIG);
+            kicker.configure(ShooterConstants.KICKER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
             shooter2.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
             shooter2.setControl(new Follower(HardwareConstants.SHOOTER_CAN, MotorAlignmentValue.Opposed)); //TODO
     
@@ -98,12 +95,12 @@ public class Shooter implements Subsystem{
             }
         }
     
-        public void setKickerSpeed (double velo) {
-            velo = MathUtil.clamp(velo, 0.0, 100);//TODO
-    
-            kicker.setControl(
-                kickerVeloRequest.withVelocity(velo).withSlot(0)
-                );
+        /**
+         * 
+         * @param velo (percent: -100 to 100)
+         */
+        public void setKickerSpeed(double velo) {
+            kicker.set(velo);
     
             kickerSetPointLog.append(velo);
     
@@ -114,7 +111,7 @@ public class Shooter implements Subsystem{
     
         public void stopShooterSub() {
             shooter.setControl(staticBrakeRequest);
-            kicker.setControl(kickerVeloRequest);
+            kicker.stopMotor();
         }
     
         private void setVoltage(double voltage){
@@ -141,14 +138,14 @@ public class Shooter implements Subsystem{
 
     public void log() {
         shooterVelo.refresh();
-        kickerVelo.refresh();
+        kickerRelativeEncoder.getVelocity();
 
         shooterVeloLog.append(shooterVelo.getValueAsDouble());
-        kickerVeloLog.append(kickerVelo.getValueAsDouble());
+        kickerVeloLog.append(kickerRelativeEncoder.getVelocity());
 
         if (BuildConstants.PUBLISH_EVERYTHING) {
             shooterVeloPub.set(shooterVelo.getValueAsDouble());
-            kickerVeloPub.set(kickerVelo.getValueAsDouble());
+            kickerVeloPub.set(kickerRelativeEncoder.getVelocity());
         }
     }
 }

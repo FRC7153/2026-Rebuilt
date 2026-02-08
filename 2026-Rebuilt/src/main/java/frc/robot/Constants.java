@@ -52,8 +52,8 @@ public class Constants {
 
         //Cancoder CAN IDs 
         public static final int SHOOTER_CAN = 15;
-        public static final int KICKER_CAN = 16;
-        public static final int SHOOTER_2_CAN = 17;
+        public static final int SHOOTER_2_CAN = 16;
+        public static final int KICKER_CAN = 17;
 
         // Pigeon 2.0
         public final static int PIGEON_CAN_ID = 20;
@@ -95,8 +95,8 @@ public class Constants {
     public static final double SHOOTER_GEAR_RATIO = 1.0 / 1.0;
 
     public static final Slot0Configs SHOOTER_GAINS = new Slot0Configs()
-        .withKP(0.2).withKI(0.0).withKD(0.0).withKS(0.2)
-        .withKV(0.12).withKA(0.0);//TODO
+        .withKP(0.21896).withKI(0.0).withKD(0.0).withKS(0.29926)
+        .withKV(0.13849).withKA(0.068329);//TODO
 
     private static final CurrentLimitsConfigs SHOOTER_CURRENT_LIMITS_CONFIGS =
         new CurrentLimitsConfigs()
@@ -118,18 +118,15 @@ public class Constants {
         .withFeedback(SHOOTER_ENCODER_CONFIGS)
         .withMotorOutput(SHOOTER_OUTPUT_CONFIGS);
     
-    private static final Slot0Configs KICKER_GAINS =new Slot0Configs()
-        .withKP(0.15).withKI(0.0).withKD(0.0)
-        .withKS(0.2).withKV(0.12).withKA(0.0);//TODO
-
-    private static final MotorOutputConfigs KICKER_OUTPUT_CONFIGS = new MotorOutputConfigs()
-        .withInverted(InvertedValue.Clockwise_Positive) //TODO
-        .withNeutralMode(NeutralModeValue.Brake); 
-
-    public static final TalonFXConfiguration KICKER_CONFIG = new TalonFXConfiguration()
-        .withSlot0(KICKER_GAINS)
-        .withCurrentLimits(SHOOTER_CURRENT_LIMITS_CONFIGS)
-        .withFeedback(SHOOTER_ENCODER_CONFIGS)
-        .withMotorOutput(KICKER_OUTPUT_CONFIGS);
+        public static final ClosedLoopConfig KICKER_PID = new ClosedLoopConfig()
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .pid(0.0, 0.0, 0.0); //TODO
+        
+        // Intake Configs Neo vortex pivot 
+        public static final SparkBaseConfig KICKER_CONFIG = new SparkFlexConfig()
+            .idleMode(IdleMode.kBrake)
+            .inverted(false)//TODO
+            .smartCurrentLimit(50)//TODO
+            .apply(KICKER_PID);
     }
 }
