@@ -24,6 +24,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.BuildConstants;
@@ -34,7 +35,10 @@ public class Shooter implements Subsystem{
     private final TalonFX shooter = new TalonFX(HardwareConstants.SHOOTER_CAN, HardwareConstants.CANIVORE);
     private final TalonFX shooter2 = new TalonFX(HardwareConstants.SHOOTER_2_CAN, HardwareConstants.CANIVORE);
     private final SparkFlex kicker = new SparkFlex(HardwareConstants.KICKER_CAN, MotorType.kBrushless);
+    private final SparkFlex liveFloor = new SparkFlex(HardwareConstants.LIVEFLOOR_CAN, MotorType.kBrushless);
     private final RelativeEncoder kickerRelativeEncoder = kicker.getEncoder();
+    private final RelativeEncoder liveFloorRelativeEncoder = liveFloor.getEncoder();
+
     
     private final StaticBrake staticBrakeRequest = new StaticBrake();
 
@@ -47,34 +51,43 @@ public class Shooter implements Subsystem{
     private static SysIdRoutine shooterRoutine;
     
         // NT Logging 
-        private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub;
+        private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub, liveFloorVeloPub, liveFloorSetPointPub;
     
         //Datalog
         private final DoubleLogEntry shooterVeloLog = 
             new DoubleLogEntry(DataLogManager.getLog(), "shooter/Velo", "RPS");
         
         private final DoubleLogEntry kickerVeloLog = 
-            new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Velo", "RPS");
+            new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Velo", "RPM");
+
+        private final DoubleLogEntry liveFloorVeloLog = 
+            new DoubleLogEntry(DataLogManager.getLog(), "LiveFloor/Velo", "RPM");
     
         private final DoubleLogEntry kickerSetPointLog = 
-            new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Setpoint", "RPS");
+            new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Setpoint", "RPM");
     
         private final DoubleLogEntry shooterSetPointLog = 
             new DoubleLogEntry(DataLogManager.getLog(), "Shooter/Setpoint", "RPS");
+        
+        private final DoubleLogEntry liveFLoorSetpointLog = 
+            new DoubleLogEntry(DataLogManager.getLog(), "LiveFloor/Setpoint", "RPM");
     
     
         public Shooter() {
             shooter.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
             kicker.configure(ShooterConstants.KICKER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+            liveFloor.configure(ShooterConstants.LIVEFLOOR_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
             shooter2.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
-            shooter2.setControl(new Follower(HardwareConstants.SHOOTER_CAN, MotorAlignmentValue.Opposed)); //TODO
+            shooter2.setControl(new Follower(HardwareConstants.SHOOTER_CAN, MotorAlignmentValue.Opposed)); 
     
             if (BuildConstants.PUBLISH_EVERYTHING){
                 NetworkTable nt = NetworkTableInstance.getDefault().getTable("Shooter");
                 kickerVeloPub = nt.getDoubleTopic("kickerVelo").publish();
                 shooterVeloPub = nt.getDoubleTopic("shooterVelo").publish();
+                liveFloorVeloPub = nt.getDoubleTopic("liveFloorVelo").publish();
                 kickerSetPointPub = nt.getDoubleTopic("kickerSetpoint").publish();
                 shooterSetpointPub = nt.getDoubleTopic("shooterSetpoint").publish();
+                liveFloorSetPointPub = nt.getDoubleTopic("liveFloorSetpoint").publish();
             } else {
                 kickerVeloPub = null;
                 shooterVeloPub = null;
@@ -99,19 +112,30 @@ public class Shooter implements Subsystem{
          * 
          * @param velo (percent: -100 to 100)
          */
-        public void setKickerSpeed(double velo) {
-            kicker.set(velo);
+        public void setKickerSpeed(double speed) {
+            kicker.set(speed);
     
-            kickerSetPointLog.append(velo);
+            kickerSetPointLog.append(speed);
     
             if (BuildConstants.PUBLISH_EVERYTHING){
-                kickerSetPointPub.set(velo);
+                kickerSetPointPub.set(speed);
+            }
+        }
+
+        public void setliveFloorSpeed(double speed) {
+            liveFloor.set(speed); 
+
+            liveFLoorSetpointLog.append(speed);
+
+            if(BuildConstants.PUBLISH_EVERYTHING){
+                liveFloorSetPointPub.set(speed);
             }
         }
     
         public void stopShooterSub() {
             shooter.setControl(staticBrakeRequest);
-            kicker.stopMotor();
+            kicker.disable();
+            liveFloor.disable();
         }
     
         private void setVoltage(double voltage){
@@ -139,13 +163,16 @@ public class Shooter implements Subsystem{
     public void log() {
         shooterVelo.refresh();
         kickerRelativeEncoder.getVelocity();
+        liveFloorRelativeEncoder.getVelocity();
 
         shooterVeloLog.append(shooterVelo.getValueAsDouble());
         kickerVeloLog.append(kickerRelativeEncoder.getVelocity());
+        liveFloorVeloLog.append(liveFloorRelativeEncoder.getVelocity());
 
         if (BuildConstants.PUBLISH_EVERYTHING) {
             shooterVeloPub.set(shooterVelo.getValueAsDouble());
             kickerVeloPub.set(kickerRelativeEncoder.getVelocity());
+            liveFloorVeloPub.set(liveFloorRelativeEncoder.getVelocity());
         }
     }
 }

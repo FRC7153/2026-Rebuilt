@@ -15,7 +15,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -23,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Commands.ShootCommand;
 import frc.robot.Constants.DashboardConstants;
 import frc.robot.Libs.Elastic;
+import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Swerve.CommandSwerveDrivetrain;
 import frc.robot.Subsystems.Swerve.Telemetry;
@@ -52,9 +55,10 @@ public class RobotContainer {
 
   //Subsystems
   private final Shooter shooter = Utils.timeInstantiation(() -> new Shooter());
+  private final Climber climber = Utils.timeInstantiation(() -> new Climber());
 
   // Auto
-  private final AutoChooser auto = new AutoChooser(drivetrain, shooter);
+  private final AutoChooser auto = new AutoChooser(drivetrain, shooter, climber);
   private final Dashboard dashboard = new Dashboard(baseController, armsController);
 
   public RobotContainer() {
@@ -77,6 +81,9 @@ public class RobotContainer {
       )
     );
 
+    shooter.setDefaultCommand(
+      new RunCommand(() -> shooter.stopShooterSub(), shooter)
+    ); //TODO
     
     baseController.a().whileTrue(drivetrain.applyRequest(() -> brake));
     baseController.b().whileTrue(drivetrain.applyRequest(() ->
@@ -109,7 +116,8 @@ public class RobotContainer {
 
     baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter));
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter))
+      .whileFalse(new InstantCommand(() -> shooter.stopShooterSub(), shooter));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }
@@ -120,10 +128,26 @@ public class RobotContainer {
 
   public void log(){
     dashboard.update();
-    //shooter.log(); TODO
+    shooter.log(); 
   }
 
   public Command getAutonomousCommand() {
-    return auto.getCurrentSelectedCommand();
+            // Simple drive forward auton
+        final var idle = new SwerveRequest.Idle();
+        return Commands.sequence(
+            // Reset our field centric heading to match the robot
+            // facing away from our alliance station wall (0 deg).
+            drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
+            // Then slowly drive forward (away from us) for 5 seconds.
+            drivetrain.applyRequest(() ->
+                drive.withVelocityX(0.5)
+                    .withVelocityY(0)
+                    .withRotationalRate(0)
+            )
+            .withTimeout(5.0),
+            // Finally idle for the rest of auton
+            drivetrain.applyRequest(() -> idle)
+        );
+    //return auto.getCurrentSelectedCommand();
   }
 }

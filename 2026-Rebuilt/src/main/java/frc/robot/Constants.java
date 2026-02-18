@@ -46,17 +46,22 @@ public class Constants {
         public final static int RL_CANCODER_CAN = 11;
         public final static int RR_CANCODER_CAN = 12;
 
-        // Cancoder CAN IDs
+        // Intake Subsystem CAN IDs
         public static final int INTAKE_CAN = 13;
         public static final int INTAKE_PIVOT_CAN = 14;
 
-        //Cancoder CAN IDs 
+        //Shooter Subsystem CAN IDs 
         public static final int SHOOTER_CAN = 15;
         public static final int SHOOTER_2_CAN = 16;
         public static final int KICKER_CAN = 17;
+        public static final int LIVEFLOOR_CAN = 18;
+
+        // Climber Subsystem CAN IDs
+        public static final int CLIMBER_CAN = 19;
 
         // Pigeon 2.0
         public final static int PIGEON_CAN_ID = 20;
+
         // PDH Can ID
         public static final int PDH_CAN = 21;
 
@@ -67,7 +72,7 @@ public class Constants {
 
     public class IntakeConstants {
         // Intake gear ratios
-        public static final double INTAKE_GEAR_RATIO = 1.0 / 1.0; //TODO
+        public static final double INTAKE_PIVOT_GEAR_RATIO = 5.0 / 1.0; //TODO
                 
         public static final ClosedLoopConfig INTAKE_PIVOT_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
@@ -90,6 +95,23 @@ public class Constants {
             .smartCurrentLimit(50)// TODO
             .apply(INTAKE_PID);
     }
+
+    public class ClimberConstants {
+        // Climber gear ratios
+        public static final double CLIMBER_GEAR_RATIO = 125.0 / 1.0; 
+
+        public static final ClosedLoopConfig CLIMBER_PID = new ClosedLoopConfig()
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .pid(0.0, 0.0, 0.0); //TODO
+        
+        // Climber Configs Neo vortex pivot 
+        public static final SparkBaseConfig CLIMBER_CONFIG = new SparkFlexConfig()
+            .idleMode(IdleMode.kBrake)
+            .inverted(false)//TODO
+            .smartCurrentLimit(50)//TODO
+            .apply(CLIMBER_PID);
+    }
+    
     public class ShooterConstants {
     // Shooter gear ratio 
     public static final double SHOOTER_GEAR_RATIO = 1.0 / 1.0;
@@ -118,15 +140,26 @@ public class Constants {
         .withFeedback(SHOOTER_ENCODER_CONFIGS)
         .withMotorOutput(SHOOTER_OUTPUT_CONFIGS);
     
-        public static final ClosedLoopConfig KICKER_PID = new ClosedLoopConfig()
+    public static final ClosedLoopConfig KICKER_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.0, 0.0, 0.0); //TODO
         
-        // Intake Configs Neo vortex pivot 
-        public static final SparkBaseConfig KICKER_CONFIG = new SparkFlexConfig()
+    // Kicker Configs Neo vortex  
+    public static final SparkBaseConfig KICKER_CONFIG = new SparkFlexConfig()
             .idleMode(IdleMode.kBrake)
             .inverted(false)//TODO
             .smartCurrentLimit(50)//TODO
             .apply(KICKER_PID);
+    
+    public static final ClosedLoopConfig LIVEFLOOR_PID = new ClosedLoopConfig()
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .pid(0.0, 0.0, 0.0); //TODO
+            
+    public static final SparkBaseConfig LIVEFLOOR_CONFIG = new SparkFlexConfig()
+            .idleMode(IdleMode.kBrake)
+            .inverted(false)//TODO
+            .smartCurrentLimit(50)//TODO
+            .apply(LIVEFLOOR_PID);
+        
     }
-}
+} 

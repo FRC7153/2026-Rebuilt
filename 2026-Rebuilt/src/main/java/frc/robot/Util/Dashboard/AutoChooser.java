@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import frc.robot.Constants.BuildConstants;
 import frc.robot.Commands.SysID.SysIdCharacterizationCommand;
+import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Swerve.CommandSwerveDrivetrain;
 
@@ -30,12 +31,14 @@ public class AutoChooser {
 
     private final CommandSwerveDrivetrain drive;
     private final Shooter shooter;
+    private final Climber climber;
 
     private final Alert noAutoLoadedAlert = new Alert("No auto loaded yet (run pregame)", AlertType.kInfo);
 
-    public AutoChooser(CommandSwerveDrivetrain drive, Shooter shooter) {
+    public AutoChooser(CommandSwerveDrivetrain drive, Shooter shooter, Climber climber) {
         this.drive = drive;
         this.shooter = shooter;
+        this.climber = climber;
 
     // On change
     chooser.onChange((Pair<Pose2d, Supplier<Command>> newAuto) -> {
@@ -59,6 +62,16 @@ public class AutoChooser {
 
     chooser.addOption("SYSID Shooter D-", 
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), false, false)));
+
+      //Climber SysId 
+    chooser.addOption("SYSID Climber Q+", 
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), true, true)));
+    chooser.addOption("SYSID Climber Q-", 
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), true, false)));
+    chooser.addOption("SYSID Climber D+", 
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), false, true)));
+    chooser.addOption("SYSID Climber D-", 
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), false, false)));
 
       
     /**if (BuildConstants.INCLUDE_TEST_AUTOS) {
