@@ -6,7 +6,6 @@ import static edu.wpi.first.units.Units.Volts;
 
 import org.littletonrobotics.urcl.URCL;
 
-import com.ctre.phoenix6.SignalLogger;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -18,7 +17,6 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -76,10 +74,9 @@ public class Climber implements Subsystem {
         climber.stopMotor();
     }
 
-    public void setVoltage(double voltage) {
+    private void setVoltage(double voltage) {
         climber.setVoltage(voltage);
     }
-
 
     public static SysIdRoutine getClimberRoutine(Climber climber) {
         System.out.println("Starting URCL SignalLogger due to getClimberRoutine");
@@ -98,5 +95,15 @@ public class Climber implements Subsystem {
         }
 
         return climberRoutine;
+    }
+
+    public void log() {
+        climberEncoder.getVelocity();
+
+        climberPositionLog.append(climberEncoder.getPosition());
+
+        if (BuildConstants.PUBLISH_EVERYTHING) {
+            climberPositionPub.set(climberEncoder.getPosition());
+        }
     }
 }

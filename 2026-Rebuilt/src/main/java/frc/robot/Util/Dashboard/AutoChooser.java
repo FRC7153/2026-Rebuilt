@@ -73,6 +73,15 @@ public class AutoChooser {
     chooser.addOption("SYSID Climber D-", 
       Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), false, false)));
 
+    chooser.addOption("SYSID Kicker Q+",
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), true, true)));
+    chooser.addOption("SYSID Kicker Q-",
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), true, false)));
+    chooser.addOption("SYSID Kicker D+",
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), false, true)));
+    chooser.addOption("SYSID Kicker D-",
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), false, false)));
+
       
     /**if (BuildConstants.INCLUDE_TEST_AUTOS) {
       // Add Swerve SysId drive autos

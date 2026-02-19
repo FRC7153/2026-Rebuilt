@@ -1,7 +1,10 @@
 package frc.robot.Subsystems;
 
 import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
+
+import org.littletonrobotics.urcl.URCL;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusSignal;
@@ -13,6 +16,8 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
@@ -24,7 +29,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
 import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.BuildConstants;
@@ -38,7 +42,7 @@ public class Shooter implements Subsystem{
     private final SparkFlex liveFloor = new SparkFlex(HardwareConstants.LIVEFLOOR_CAN, MotorType.kBrushless);
     private final RelativeEncoder kickerRelativeEncoder = kicker.getEncoder();
     private final RelativeEncoder liveFloorRelativeEncoder = liveFloor.getEncoder();
-
+    private final SparkClosedLoopController kickerController = kicker.getClosedLoopController();
     
     private final StaticBrake staticBrakeRequest = new StaticBrake();
 
@@ -48,7 +52,7 @@ public class Shooter implements Subsystem{
         .withOverrideBrakeDurNeutral(true)
         .withSlot(0);
 
-    private static SysIdRoutine shooterRoutine;
+    private static SysIdRoutine shooterRoutine, kickerRoutine;
     
         // NT Logging 
         private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub, liveFloorVeloPub, liveFloorSetPointPub;
@@ -71,6 +75,13 @@ public class Shooter implements Subsystem{
         
         private final DoubleLogEntry liveFLoorSetpointLog = 
             new DoubleLogEntry(DataLogManager.getLog(), "LiveFloor/Setpoint", "RPM");
+
+        private final DoubleLogEntry kickerVoltageLog =
+            new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Voltage", "Volts");
+
+        private final DoubleLogEntry kickerPositionLog =
+            new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Position", "Rotations");
+        
     
     
         public Shooter() {
@@ -80,6 +91,7 @@ public class Shooter implements Subsystem{
             shooter2.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
             shooter2.setControl(new Follower(HardwareConstants.SHOOTER_CAN, MotorAlignmentValue.Opposed)); 
     
+
             if (BuildConstants.PUBLISH_EVERYTHING){
                 NetworkTable nt = NetworkTableInstance.getDefault().getTable("Shooter");
                 kickerVeloPub = nt.getDoubleTopic("kickerVelo").publish();
@@ -110,10 +122,10 @@ public class Shooter implements Subsystem{
     
         /**
          * 
-         * @param velo (percent: -100 to 100)
+         * @param velo rpm
          */
         public void setKickerSpeed(double speed) {
-            kicker.set(speed);
+            kickerController.setSetpoint(speed, ControlType.kVelocity);
     
             kickerSetPointLog.append(speed);
     
@@ -138,9 +150,14 @@ public class Shooter implements Subsystem{
             liveFloor.disable();
         }
     
-        private void setVoltage(double voltage){
+        private void setShooterVoltage(double voltage){
             shooter.setVoltage(voltage);
         }
+
+        private void setKickerVoltage(double voltage) {
+            kicker.setVoltage(voltage);
+        }
+
     
         public static SysIdRoutine getShooterRoutine(Shooter shooter) {
             System.out.println("Starting CTRE SignalLogger due to getModuleDriveRoutine");
@@ -151,13 +168,30 @@ public class Shooter implements Subsystem{
                 new SysIdRoutine.Config(Volts.of(0.50).per(Second),
                 Volts.of(6), null, state -> SignalLogger.writeString("SysID_Shooter", state.toString())
             ), new SysIdRoutine.Mechanism((Voltage v) -> {
-                shooter.setVoltage(v.in(Volts));
+                shooter.setShooterVoltage(v.in(Volts));
             }, null, shooter) 
             );
         }
-        return shooterRoutine;
-    }
+            return shooterRoutine;
+        }
 
+        public static SysIdRoutine getKickerRoutine(Shooter shooter) {
+            System.out.println("Starting URCL SignalLogger due to getKickerRoutine");
+            DataLogManager.start();
+            URCL.start();
+
+            if (kickerRoutine == null){
+            kickerRoutine = new SysIdRoutine(
+                new SysIdRoutine.Config(Volts.of(1.0).per(Second),
+                    Volts.of(6.0),
+                    Seconds.of(10)), 
+                new SysIdRoutine.Mechanism((voltage) -> {
+                        shooter.setKickerVoltage(voltage.in(Volts));
+                    },
+                    null, shooter));
+            }
+            return kickerRoutine;
+        }
 
 
     public void log() {
@@ -168,6 +202,9 @@ public class Shooter implements Subsystem{
         shooterVeloLog.append(shooterVelo.getValueAsDouble());
         kickerVeloLog.append(kickerRelativeEncoder.getVelocity());
         liveFloorVeloLog.append(liveFloorRelativeEncoder.getVelocity());
+
+        kickerVoltageLog.append(kicker.getAppliedOutput());
+        kickerPositionLog.append(kickerRelativeEncoder.getPosition());
 
         if (BuildConstants.PUBLISH_EVERYTHING) {
             shooterVeloPub.set(shooterVelo.getValueAsDouble());

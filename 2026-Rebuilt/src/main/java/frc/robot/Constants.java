@@ -10,6 +10,8 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.ClosedLoopConfig;
+import com.revrobotics.spark.config.EncoderConfig;
+import com.revrobotics.spark.config.FeedForwardConfig;
 import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
@@ -73,10 +75,16 @@ public class Constants {
     public class IntakeConstants {
         // Intake gear ratios
         public static final double INTAKE_PIVOT_GEAR_RATIO = 5.0 / 1.0; //TODO
-                
+        
+        public static final FeedForwardConfig INTAKE_PIVOT_FF = new FeedForwardConfig()
+            .kS(0.0074799)
+            .kV(0.00015411)
+            .kA(0.00001195); //TODO
+
         public static final ClosedLoopConfig INTAKE_PIVOT_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pid(0.0, 0.0, 0.0); //TODO
+            .pid(1.7866, 0.0, 0.0)
+            .apply(INTAKE_PIVOT_FF); //TODO
         
         public static final ClosedLoopConfig INTAKE_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
@@ -116,6 +124,8 @@ public class Constants {
     // Shooter gear ratio 
     public static final double SHOOTER_GEAR_RATIO = 1.0 / 1.0;
 
+    public static final double LIVEFLOOR_GEAR_RATIO = 25.0 / 1.0;//TODO
+
     public static final Slot0Configs SHOOTER_GAINS = new Slot0Configs()
         .withKP(0.21896).withKI(0.0).withKD(0.0).withKS(0.29926)
         .withKV(0.13849).withKA(0.068329);//TODO
@@ -154,12 +164,14 @@ public class Constants {
     public static final ClosedLoopConfig LIVEFLOOR_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(0.0, 0.0, 0.0); //TODO
+    
+    public static final EncoderConfig LIVEFLOOR_ENCODER_CONFIG = new EncoderConfig()
+            .velocityConversionFactor(1.0 / LIVEFLOOR_GEAR_RATIO);
             
     public static final SparkBaseConfig LIVEFLOOR_CONFIG = new SparkFlexConfig()
             .idleMode(IdleMode.kBrake)
             .inverted(false)//TODO
             .smartCurrentLimit(50)//TODO
             .apply(LIVEFLOOR_PID);
-        
     }
 } 

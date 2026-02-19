@@ -82,8 +82,8 @@ public class RobotContainer {
     );
 
     shooter.setDefaultCommand(
-      new RunCommand(() -> shooter.stopShooterSub(), shooter)
-    ); //TODO
+      new ShootCommand(shooter, 0.0, 0.0, 0.0)
+      );
     
     baseController.a().whileTrue(drivetrain.applyRequest(() -> brake));
     baseController.b().whileTrue(drivetrain.applyRequest(() ->
@@ -116,8 +116,7 @@ public class RobotContainer {
 
     baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter))
-      .whileFalse(new InstantCommand(() -> shooter.stopShooterSub(), shooter));
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 25.0, 100, 0.2));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }
@@ -129,25 +128,11 @@ public class RobotContainer {
   public void log(){
     dashboard.update();
     shooter.log(); 
+    climber.log();
   }
 
   public Command getAutonomousCommand() {
-            // Simple drive forward auton
-        final var idle = new SwerveRequest.Idle();
-        return Commands.sequence(
-            // Reset our field centric heading to match the robot
-            // facing away from our alliance station wall (0 deg).
-            drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-            // Then slowly drive forward (away from us) for 5 seconds.
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(0.5)
-                    .withVelocityY(0)
-                    .withRotationalRate(0)
-            )
-            .withTimeout(5.0),
-            // Finally idle for the rest of auton
-            drivetrain.applyRequest(() -> idle)
-        );
-    //return auto.getCurrentSelectedCommand();
+        
+    return auto.getCurrentSelectedCommand();
   }
 }
