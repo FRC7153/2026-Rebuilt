@@ -12,6 +12,7 @@ import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
@@ -23,7 +24,8 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-
+import frc.robot.Constants.AprilTagConstants;
+import frc.robot.Libs.LimelightHelpers;
 import frc.robot.Subsystems.Swerve.TunerConstants.TunerSwerveDrivetrain;
 
 /**
@@ -239,6 +241,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_hasAppliedOperatorPerspective = true;
             });
         }
+
+        updateVision();
     }
 
     private void startSimThread() {
@@ -299,5 +303,47 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     @Override
     public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
         return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
+    }
+
+    public void updateVision() {
+        addLimelightMeasurement(AprilTagConstants.LL_4_LEFT);
+        addLimelightMeasurement(AprilTagConstants.LL_4_RIGHT);
+    }
+
+    private void addLimelightMeasurement(String camerName) {
+        var estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(camerName);
+
+        if (estimate == null) {
+            System.out.println("Limelight estimate is null for camera: " + camerName);
+            return;
+        }
+
+        if (estimate.tagCount < 1){
+            System.out.println("Limelight estimate has no targets for camera: " + camerName);
+            return;
+        }
+
+        if (estimate.avgTagDist > 5.0) {
+            System.out.println("Limelight estimate is too far for camera: " + camerName + " with distance: " + estimate.avgTagDist);
+            return; //TODO
+        }
+
+        if (Math.abs(getState().Speeds.omegaRadiansPerSecond) > 4.0) {
+            System.out.println("Limelight estimate rejected due to high angular velocity of: " + getState().Speeds.omegaRadiansPerSecond);
+            return; // Reject vision measurement if robot is rotating too fast
+        }
+
+        Pose2d visionPose = estimate.pose;
+
+        var stdDevs = VecBuilder.fill(
+            0.4, // X
+            0.4, // Y
+            999999 // Theta
+        );
+
+        addVisionMeasurement(
+            visionPose,
+            estimate.timestampSeconds,
+            stdDevs);
     }
 }

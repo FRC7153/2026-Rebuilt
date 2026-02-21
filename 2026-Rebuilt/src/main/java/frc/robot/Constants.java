@@ -8,6 +8,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.config.ClosedLoopConfig;
 import com.revrobotics.spark.config.EncoderConfig;
@@ -19,6 +20,10 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 
 public class Constants {
+    public class AprilTagConstants {
+        public static final String LL_4_LEFT = "limelight-4-left";
+        public static final String LL_4_RIGHT = "limelight-4-right";
+    }
     public class BuildConstants {
         public static final boolean PUBLISH_EVERYTHING = true;
         public static final boolean INCLUDE_TEST_AUTOS = true;
@@ -76,7 +81,7 @@ public class Constants {
         // Intake gear ratios
         public static final double INTAKE_PIVOT_GEAR_RATIO = 5.0 / 1.0; //TODO
         
-        public static final FeedForwardConfig INTAKE_PIVOT_FF = new FeedForwardConfig()
+        public static final FeedForwardConfig INTAKE_FF_CONFIGS = new FeedForwardConfig()
             .kS(0.0074799)
             .kV(0.00015411)
             .kA(0.00001195); //TODO
@@ -84,7 +89,7 @@ public class Constants {
         public static final ClosedLoopConfig INTAKE_PIVOT_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
             .pid(1.7866, 0.0, 0.0)
-            .apply(INTAKE_PIVOT_FF); //TODO
+            .apply(INTAKE_FF_CONFIGS); //TODO
         
         public static final ClosedLoopConfig INTAKE_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
@@ -150,9 +155,14 @@ public class Constants {
         .withFeedback(SHOOTER_ENCODER_CONFIGS)
         .withMotorOutput(SHOOTER_OUTPUT_CONFIGS);
     
+    public static final FeedForwardConfig KICKER_FF_CONFIGS = new FeedForwardConfig()
+        .sva(0.0074999, 0.0002, 0.00001195, ClosedLoopSlot.kSlot0); //TODO
+        
+    
     public static final ClosedLoopConfig KICKER_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pid(0.0, 0.0, 0.0); //TODO
+            .pid(0.0004, 0.0, 0.002)
+            .apply(KICKER_FF_CONFIGS); //TODO
         
     // Kicker Configs Neo vortex  
     public static final SparkBaseConfig KICKER_CONFIG = new SparkFlexConfig()

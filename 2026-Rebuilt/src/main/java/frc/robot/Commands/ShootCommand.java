@@ -18,8 +18,8 @@ public class ShootCommand extends RunCommand{
     public ShootCommand(Shooter shooter, double shooterVelo, double kickerSpeed, double liveFloorSpeed){
         super(() -> {
             shooter.setShooterSpeed(shooterVelo);
-            shooter.setKickerSpeed(-80);
-            new WaitCommand(6.7);
+            shooter.setKickerSpeed(-800);
+            new WaitCommand(3.7);
             shooter.setKickerSpeed(kickerSpeed);
             shooter.setliveFloorSpeed(liveFloorSpeed);
         }, shooter);

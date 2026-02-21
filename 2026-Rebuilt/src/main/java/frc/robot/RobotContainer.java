@@ -4,20 +4,19 @@
 
 package frc.robot;
 
-import java.util.function.Supplier;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
 
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -61,7 +60,9 @@ public class RobotContainer {
   private final AutoChooser auto = new AutoChooser(drivetrain, shooter, climber);
   private final Dashboard dashboard = new Dashboard(baseController, armsController);
 
+
   public RobotContainer() {
+    initiliazeHolonomic();
     configureBindings();
   }
 
@@ -116,13 +117,37 @@ public class RobotContainer {
 
     baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 25.0, 100, 0.2));
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 25.0, 1000, -1.0));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }
 
   public void checkHardware(){
     dashboard.checkHardware();
+  }
+
+  public void initiliazeHolonomic(){
+    try {
+        AutoBuilder.configure(
+          () -> drivetrain.getState().Pose,   // Pose supplier 
+          (pose) -> drivetrain.resetPose(pose),      // Pose reset
+          () -> drivetrain.getState().Speeds, // Velocity supplier
+          (speeds, feedforwards) -> drivetrain.setControl(
+            new SwerveRequest.ApplyRobotSpeeds()
+              .withSpeeds(speeds)
+          ),
+          new PPHolonomicDriveController(
+            new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+            new PIDConstants(4.0, 0.0, 0.0) // Rotation PID constants
+          ),
+          RobotConfig.fromGUISettings(),
+          () -> DriverStation.getAlliance()
+          .map(a -> a == DriverStation.Alliance.Red).orElse(false),
+          drivetrain
+          );
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
   }
 
   public void log(){
