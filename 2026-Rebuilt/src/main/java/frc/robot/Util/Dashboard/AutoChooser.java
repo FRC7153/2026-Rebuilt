@@ -2,10 +2,13 @@ package frc.robot.Util.Dashboard;
 
 import java.util.function.Supplier;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.FlippingUtil;
 
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -47,6 +50,7 @@ public class AutoChooser {
     });
 
     // Starting Positions //TODO 
+    Pose2d startingCenter = new Pose2d(3.548, 4.449, Rotation2d.k180deg);
 
     // Autos that are used for testing
     chooser.addOption("No Auto", Pair.of(null, () -> noOpCommand));
@@ -82,30 +86,18 @@ public class AutoChooser {
     chooser.addOption("SYSID Kicker D-",
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), false, false)));
 
-      
-    /**if (BuildConstants.INCLUDE_TEST_AUTOS) {
-      // Add Swerve SysId drive autos
-      chooser.addOption("SYSID Swerve Drive Q+", 
-      Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleDriveRoutine(drive), true, true)));
-      chooser.addOption("SYSID Swerve Drive Q-", 
-      Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleDriveRoutine(drive), true, false)));
-      chooser.addOption("SYSID Swerve Drive D+", 
-      Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleDriveRoutine(drive), false, true)));
-      chooser.addOption("SYSID Swerve Drive D-", 
-      Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleDriveRoutine(drive), false, false)));
+    try {
+      PathPlannerPath testPath = PathPlannerPath.fromPathFile("TestAuto");
+      Pose2d startingPose = testPath.getStartingDifferentialPose();
 
-      // Add Swerve SysId steer autos
-      chooser.addOption("SYSID Swerve Steer Q+", 
-        Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleSteerRoutine(drive), true, true)));
-      chooser.addOption("SYSID Swerve Steer Q-", 
-        Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleSteerRoutine(drive), true, false)));
-      chooser.addOption("SYSID Swerve Steer D+", 
-        Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleSteerRoutine(drive), false, true)));
-      chooser.addOption("SYSID Swerve Steer D-", 
-        Pair.of(null, () -> new SysIdCharacterizationCommand(SwerveSysID.getModuleSteerRoutine(drive), false, false)));
-    } 
+      chooser.addOption("Test Auto", 
+        Pair.of(startingPose,
+          () -> AutoBuilder.buildAuto("TestAuto"))
+      );
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
-    */
     // Add the chooser to the dashboard
     SmartDashboard.putData("Auto", chooser);
     noAutoLoadedAlert.set(true);
@@ -115,10 +107,30 @@ public class AutoChooser {
    * Loads the currently selected command.
    */
     public void loadAutoCommand() {
-        Pair<Pose2d, Supplier<Command>> selected = chooser.getSelected();
-        currentLoadedCommand = selected.getSecond().get();
-        System.out.printf("New auto loaded: %s\n", currentLoadedCommand.getName());
-        noAutoLoadedAlert.set(false);
+      Pair<Pose2d, Supplier<Command>> selected = chooser.getSelected();
+
+      if (selected == null) {
+        currentLoadedCommand = noOpCommand;
+        return;
+      }
+
+      Pose2d startingPose = selected.getFirst();
+
+      // If auto has a starting pose, reset drivetrain
+      if (startingPose != null) {
+          drive.resetPose(
+              DriverStation.getAlliance()
+                  .map(a -> a == DriverStation.Alliance.Red
+                      ? FlippingUtil.flipFieldPose(startingPose)
+                      : startingPose)
+                  .orElse(startingPose)
+          );
+      }
+
+      currentLoadedCommand = selected.getSecond().get();
+
+      System.out.println("New auto loaded: " + currentLoadedCommand.getName());
+      noAutoLoadedAlert.set(false);
 
     } 
 
