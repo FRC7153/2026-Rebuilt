@@ -1,5 +1,6 @@
 package frc.robot.Util.Dashboard;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -19,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.PrintCommand;
 import frc.robot.Constants.BuildConstants;
 import frc.robot.Commands.SysID.SysIdCharacterizationCommand;
 import frc.robot.Subsystems.Climber;
+import frc.robot.Subsystems.Intake;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Swerve.CommandSwerveDrivetrain;
 
@@ -35,25 +37,25 @@ public class AutoChooser {
     private final CommandSwerveDrivetrain drive;
     private final Shooter shooter;
     private final Climber climber;
+    private final Intake intake;
 
     private final Alert noAutoLoadedAlert = new Alert("No auto loaded yet (run pregame)", AlertType.kInfo);
 
-    public AutoChooser(CommandSwerveDrivetrain drive, Shooter shooter, Climber climber) {
+    private AutoBuilder autoBuilder = new AutoBuilder(); // For generating path following commands
+    public AutoChooser(CommandSwerveDrivetrain drive, Shooter shooter, Climber climber, Intake intake) {
         this.drive = drive;
         this.shooter = shooter;
         this.climber = climber;
+        this.intake = intake;
 
     // On change
-    chooser.onChange((Pair<Pose2d, Supplier<Command>> newAuto) -> {
+    chooser.onChange(newAuto -> {
       currentLoadedCommand = null;
       noAutoLoadedAlert.set(true);
     });
 
-    // Starting Positions //TODO 
-    Pose2d startingCenter = new Pose2d(3.548, 4.449, Rotation2d.k180deg);
-
     // Autos that are used for testing
-    chooser.addOption("No Auto", Pair.of(null, () -> noOpCommand));
+    chooser.setDefaultOption("No Auto", Pair.of(null, () -> noOpCommand));
 
     chooser.addOption("SYSID Shooter Q+", 
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), true, true)));
@@ -86,18 +88,28 @@ public class AutoChooser {
     chooser.addOption("SYSID Kicker D-",
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), false, false)));
 
-    try {
-      PathPlannerPath testPath = PathPlannerPath.fromPathFile("TestAuto");
-      Pose2d startingPose = testPath.getStartingDifferentialPose();
+    chooser.addOption("SYSID Intake Pivot Q+",
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), true, true)));
+    chooser.addOption("SYSID Intake Pivot Q-",
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), true, false)));
+    chooser.addOption("SYSID Intake Pivot D+",
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), false, true)));
+    chooser.addOption("SYSID Intake Pivot D-",
+      Pair.of(null, () -> new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), false, false)));
 
-      chooser.addOption("Test Auto", 
-        Pair.of(startingPose,
-          () -> AutoBuilder.buildAuto("TestAuto"))
-      );
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
 
+
+    PathPlannerPath testPath = loadPath("TestAuto");
+    
+    if(testPath != null){
+      chooser.addOption("Test Auto",
+        Pair.of(getStartPose(testPath), 
+          () -> AutoBuilder.buildAuto("TestAuto")
+        )
+      ); 
+    } 
+
+    
     // Add the chooser to the dashboard
     SmartDashboard.putData("Auto", chooser);
     noAutoLoadedAlert.set(true);
@@ -107,10 +119,13 @@ public class AutoChooser {
    * Loads the currently selected command.
    */
     public void loadAutoCommand() {
+
+
       Pair<Pose2d, Supplier<Command>> selected = chooser.getSelected();
 
       if (selected == null) {
         currentLoadedCommand = noOpCommand;
+        noAutoLoadedAlert.set(false);
         return;
       }
 
@@ -129,7 +144,7 @@ public class AutoChooser {
 
       currentLoadedCommand = selected.getSecond().get();
 
-      System.out.println("New auto loaded: " + currentLoadedCommand.getName());
+      System.out.println("[AutoChooser] Loaded: " + currentLoadedCommand.getName());
       noAutoLoadedAlert.set(false);
 
     } 
@@ -139,5 +154,22 @@ public class AutoChooser {
             loadAutoCommand();
         }
         return currentLoadedCommand;
+    }
+
+    private PathPlannerPath loadPath(String pathName) {
+      try {
+        return PathPlannerPath.fromPathFile(pathName);
+      } catch (Exception e) {
+        System.err.println("[AutoChooser] Could not load path: '" + pathName
+          + "'. Check that the file exists in deploy/pathplanner/paths/");
+        e.printStackTrace();
+        return null;
+      }
+    }
+
+
+    private Pose2d getStartPose(PathPlannerPath path) {
+        Optional<Pose2d> startPose = path.getStartingHolonomicPose();
+        return startPose.orElse(null);
     }
 }

@@ -25,6 +25,7 @@ public final class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
   private final CANLogger m_canLogger;
 
+  private boolean autoLoaded = false;
   public Robot() {
     ConsoleLogger.init();
     System.out.printf("Built with WPILib %s\n", WPILibVersion.Version);
@@ -69,7 +70,12 @@ public final class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+    if (!autoLoaded) {
+      m_robotContainer.pregameLoad();
+      autoLoaded = true;
+    }
+  }
 
   @Override
   public void disabledExit() {}

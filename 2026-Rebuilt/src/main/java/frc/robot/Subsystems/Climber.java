@@ -18,18 +18,25 @@ import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
+import edu.wpi.first.wpilibj.Alert;
+import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants.BuildConstants;
 import frc.robot.Constants.ClimberConstants;
 import frc.robot.Constants.HardwareConstants;
+import frc.robot.Constants.RobotConstants;
+import frc.robot.Util.Dashboard.HardwareFaultTracker;
 
 public class Climber implements Subsystem {
     private final SparkFlex climber = new SparkFlex(HardwareConstants.CLIMBER_CAN, MotorType.kBrushless);
 
     private final RelativeEncoder climberEncoder = climber.getEncoder();
     private final SparkClosedLoopController climberController = climber.getClosedLoopController();
+
+    private final Alert climberAlert = new Alert("Climber Alert", AlertType.kError);
+   
 
     private static SysIdRoutine climberRoutine;
 
@@ -46,6 +53,11 @@ public class Climber implements Subsystem {
 
     public Climber() {
         climber.configure(ClimberConstants.CLIMBER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+        climberController.setSetpoint(0, ControlType.kPosition);
+
+        // Zero the encoder on startup to ensure consistent starting position
+        climberEncoder.setPosition(0);
 
         if (BuildConstants.PUBLISH_EVERYTHING) {
             NetworkTable nt = NetworkTableInstance.getDefault().getTable("Climber");
@@ -74,6 +86,37 @@ public class Climber implements Subsystem {
         climber.stopMotor();
     }
 
+    public void extend(){
+        climberController.setSetpoint(RobotConstants.CLIMBER_EXTEND, ControlType.kPosition);
+
+        climberSetpointLog.append(RobotConstants.CLIMBER_EXTEND);
+        if(BuildConstants.PUBLISH_EVERYTHING) {
+            climberSetpointPub.set(RobotConstants.CLIMBER_EXTEND);
+        }
+    }
+
+    public void retract() {
+        climberController.setSetpoint(RobotConstants.CLIMBER_RETRACT, ControlType.kPosition);
+
+        climberSetpointLog.append(RobotConstants.CLIMBER_RETRACT);
+        if(BuildConstants.PUBLISH_EVERYTHING) {
+            climberSetpointPub.set(RobotConstants.CLIMBER_RETRACT);
+        }
+    }
+
+    public void zero() {
+        climberController.setSetpoint(RobotConstants.CLIMBER_ZERO, ControlType.kPosition);
+
+        climberSetpointLog.append(RobotConstants.CLIMBER_ZERO);
+        if(BuildConstants.PUBLISH_EVERYTHING) {
+            climberSetpointPub.set(RobotConstants.CLIMBER_ZERO);
+        }
+    }
+
+    public double getClimberPosition() {
+        return climberEncoder.getPosition();
+    }
+
     private void setVoltage(double voltage) {
         climber.setVoltage(voltage);
     }
@@ -85,9 +128,9 @@ public class Climber implements Subsystem {
 
         if (climberRoutine == null){
             climberRoutine = new SysIdRoutine(
-                new SysIdRoutine.Config(Volts.of(0.25).per(Second),
+                new SysIdRoutine.Config(Volts.of(0.5).per(Second),
                 Volts.of(6.0),
-                Seconds.of(10)), 
+                Seconds.of(10), null), 
                 new SysIdRoutine.Mechanism((voltage) -> {
                     climber.setVoltage(voltage.in(Volts));
                 },
@@ -105,5 +148,9 @@ public class Climber implements Subsystem {
         if (BuildConstants.PUBLISH_EVERYTHING) {
             climberPositionPub.set(climberEncoder.getPosition());
         }
+    
+    }
+    public void checkHardware() {
+        HardwareFaultTracker.checkFault(climberAlert, !climber.hasActiveFault() || !climber.hasActiveWarning());
     }
 }

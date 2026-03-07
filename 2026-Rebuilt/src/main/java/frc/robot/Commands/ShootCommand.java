@@ -1,29 +1,40 @@
 package frc.robot.Commands;
 
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.Subsystems.Shooter;
-
-public class ShootCommand extends RunCommand{
-
     /**
      * Creates a command to set the shooter, kicker, and live floor speeds. This command is intended to be used as a default command for the shooter subsystem, so that the shooter can be set to a desired speed whenever it is not being used for other commands.
      * @param shooter
      * @param shooterVelo 0.0 - 100.0 
-     * @param kickerSpeed rpm
+     * @param kickerSpeed 0-100%
      * @param liveFloorSpeed 0 - 100%
      */
-    public ShootCommand(Shooter shooter, double shooterVelo, double kickerSpeed, double liveFloorSpeed){
-        super(() -> {
-            shooter.setShooterSpeed(shooterVelo);
-            shooter.setKickerSpeed(-800);
-            new WaitCommand(3.7);
-            shooter.setKickerSpeed(kickerSpeed);
-            shooter.setliveFloorSpeed(liveFloorSpeed);
-        }, shooter);
+public class ShootCommand extends RunCommand {
 
-        addRequirements(shooter);
-    }    
+    private static final double VELOCITY_TOLERANCE = 5;
+
+    public ShootCommand(Shooter shooter, double shooterVelo, double kickerSpeed, double liveFloorSpeed) {
+        super(() -> {
+            // Always spin shooter
+            shooter.setShooterSpeed(shooterVelo);
+
+            // Kicker & floor logic
+            if (Math.abs(shooter.getShooterVelocity() - shooterVelo) > VELOCITY_TOLERANCE) {
+                // Reverse kicker until shooter ready
+                shooter.setKickerSpeed(-0.4);
+                shooter.setliveFloorSpeed(liveFloorSpeed);
+            } else {
+                // Shooter ready → feed
+                new WaitCommand(5);
+                shooter.setKickerSpeed(kickerSpeed);
+                shooter.setliveFloorSpeed(liveFloorSpeed);
+            }
+        }, shooter); // Only requires shooter
+    }
 }
+

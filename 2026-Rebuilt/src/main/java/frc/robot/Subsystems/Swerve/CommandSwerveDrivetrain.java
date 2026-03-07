@@ -10,6 +10,11 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.utility.WheelForceCalculator.Feedforwards;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -51,6 +56,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final SwerveRequest.SysIdSwerveTranslation m_translationCharacterization = new SwerveRequest.SysIdSwerveTranslation();
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
+
+    /* Pathplanner Swerve Request */
+    private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds = 
+        new SwerveRequest.ApplyRobotSpeeds();
 
     /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
     private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
@@ -112,7 +121,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     );
 
     /* The SysId routine to test */
-    private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineSteer;
+    private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineTranslation;
 
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -129,6 +138,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, modules);
+
+        configureAutoBuilder();
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -153,6 +164,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, odometryUpdateFrequency, modules);
+
+        configureAutoBuilder();
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -185,6 +198,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation, modules);
+
+        configureAutoBuilder();
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -240,7 +255,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 );
                 m_hasAppliedOperatorPerspective = true;
             });
-        }
+        } 
+
+        //Limelight Configuration 
+        double heading = getState().Pose.getRotation().getDegrees();
+        LimelightHelpers.SetRobotOrientation(AprilTagConstants.LL_4_LEFT, heading, 0, 0, 0, 0, 0);
+        LimelightHelpers.SetRobotOrientation(AprilTagConstants.LL_4_RIGHT, heading, 0, 0, 0, 0, 0);
 
         updateVision();
     }
@@ -306,25 +326,25 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     public void updateVision() {
-        addLimelightMeasurement(AprilTagConstants.LL_4_LEFT);
-        addLimelightMeasurement(AprilTagConstants.LL_4_RIGHT);
+        //addLimelightMeasurement(AprilTagConstants.LL_4_LEFT); TODO
+        //addLimelightMeasurement(AprilTagConstants.LL_4_RIGHT); TODO
     }
 
-    private void addLimelightMeasurement(String camerName) {
-        var estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(camerName);
+    private void addLimelightMeasurement(String cameraName) {
+        var estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
 
         if (estimate == null) {
-            System.out.println("Limelight estimate is null for camera: " + camerName);
+            System.out.println("Limelight estimate is null for camera: " + cameraName);
             return;
         }
 
         if (estimate.tagCount < 1){
-            System.out.println("Limelight estimate has no targets for camera: " + camerName);
+            System.out.println("Limelight estimate has no targets for camera: " + cameraName);
             return;
         }
 
         if (estimate.avgTagDist > 5.0) {
-            System.out.println("Limelight estimate is too far for camera: " + camerName + " with distance: " + estimate.avgTagDist);
+            System.out.println("Limelight estimate is too far for camera: " + cameraName + " with distance: " + estimate.avgTagDist);
             return; //TODO
         }
 
@@ -336,9 +356,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         Pose2d visionPose = estimate.pose;
 
         var stdDevs = VecBuilder.fill(
-            0.4, // X
-            0.4, // Y
-            999999 // Theta
+            0.4, // X TODO
+            0.4, // Y TODO
+            999999 // Theta TODO 
         );
 
         addVisionMeasurement(
@@ -346,4 +366,30 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             estimate.timestampSeconds,
             stdDevs);
     }
+        
+    private void configureAutoBuilder() {
+        RobotConfig config;
+        try {
+            config = RobotConfig.fromGUISettings();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+
+        AutoBuilder.configure(
+            () -> getState().Pose,
+            this::resetPose,
+            () -> getState().Speeds,
+            (speeds, feedforwards) -> setControl(
+                m_pathApplyRobotSpeeds.withSpeeds(speeds)
+            ), new PPHolonomicDriveController(
+                new PIDConstants(2.0, 0.0, 0.2), 
+                new PIDConstants(3.0, 0.0, 0.1)
+            ), config, 
+            () -> {
+                var alliance = DriverStation.getAlliance();
+                return alliance.isPresent() && alliance.get() == Alliance.Red;
+            }, this);
+
+}
 }
