@@ -24,8 +24,12 @@ import edu.wpi.first.apriltag.AprilTagFields;
 
 public class Constants {
     public class AprilTagConstants {
-        public static final String LL_4_LEFT = "limelight-4-left";
-        public static final String LL_4_RIGHT = "limelight-4-right";
+        public static final String LL_4_FRONT = "limelight-front";
+        public static final String LL_3_BACK = "limelight-back";
+
+        public static final double FRONT_CAMERA_HEIGHT = 0.0; //TODO Meters
+        public static final double TARGET_HEIGHT = 1.12; //TODO Meters
+        public static final double CAMERA_ANGLE_HEIGHT = 0.0; //TODO Meters
     }
     public class BuildConstants {
         public static final boolean PUBLISH_EVERYTHING = true;
@@ -204,7 +208,6 @@ public class Constants {
                 .smartCurrentLimit(50)//TODO
                 .apply(LIVEFLOOR_PID);
     }
-
     public class RobotConstants {
         // Intake Robot Constants
         public static final double INTAKE_PIVOT_STOW = 0.0; //TODO

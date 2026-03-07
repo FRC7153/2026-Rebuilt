@@ -21,6 +21,7 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
+import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
@@ -33,10 +34,14 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Constants.BuildConstants;
 import frc.robot.Constants.HardwareConstants;
 import frc.robot.Constants.ShooterConstants;
+import frc.robot.Libs.LimelightHelpers;
+import frc.robot.Subsystems.Vision.Limelight;
 import frc.robot.Util.Dashboard.HardwareFaultTracker;
+import frc.robot.Util.Math.ShooterRegression;
 
 public class Shooter implements Subsystem{
     private final TalonFX shooter = new TalonFX(HardwareConstants.SHOOTER_CAN, HardwareConstants.CANIVORE);
@@ -60,11 +65,14 @@ public class Shooter implements Subsystem{
     private final Alert kickerAlert = new Alert("Kicker Alert", AlertType.kError);
     private final Alert liveFloorAlert = new Alert("Live Floor Alert", AlertType.kError);
 
-
+    private final LimelightHelpers limelight; 
+    
     private static SysIdRoutine shooterRoutine, kickerRoutine;
     
     // NT Logging 
     private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub, liveFloorVeloPub, liveFloorSetPointPub;
+
+    private final DoublePublisher LLdistance;
 
     //Datalog
     private final DoubleLogEntry shooterVeloLog = 
@@ -100,6 +108,10 @@ public class Shooter implements Subsystem{
         shooter2.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
         shooter2.setControl(new Follower(HardwareConstants.SHOOTER_CAN, MotorAlignmentValue.Opposed)); 
 
+        limelight = new LimelightHelpers();
+
+        NetworkTable LL = NetworkTableInstance.getDefault().getTable("LLfront");
+        LLdistance = LL.getDoubleTopic("LL distance").publish();
 
         if (BuildConstants.PUBLISH_EVERYTHING){
             NetworkTable nt = NetworkTableInstance.getDefault().getTable("Shooter");
@@ -175,6 +187,25 @@ public class Shooter implements Subsystem{
     public double getShooterVelocity() {
         return shooterVelo.getValueAsDouble();
     }
+
+    public boolean setVelocityFromLimelight() {
+    if (LimelightHelpers.getTargetCount(AprilTagConstants.LL_3_BACK) < 1) {
+      shooter.stopMotor();;
+      return false;
+    }
+
+    double ty = LimelightHelpers.getTY(AprilTagConstants.LL_4_FRONT);
+    double distance = ShooterRegression.getShooterDistance(ty);
+    double targetVel = ShooterRegression.getVelocityMetersPerSec(distance);
+
+    double targetRPS = targetVel;
+
+    shooter.setControl(shooterVeloRequest.withVelocity(targetRPS));
+
+    // Ready when within ±100 RPM of target
+    double currentRPS = shooter.getVelocity().getValueAsDouble();
+    return Math.abs(currentRPS - targetRPS) < 100.0;
+  }
 
 
     public static SysIdRoutine getShooterRoutine(Shooter shooter) {

@@ -54,8 +54,8 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-    private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
+    //private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    //private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
@@ -78,6 +78,17 @@ public class RobotContainer {
   public RobotContainer() {
     FollowPathCommand.warmupCommand().schedule(); // Warm up the path planner command to reduce latency on the first path following command
     //SmartDashboard.putData("Home Intake", homeIntakeCommand);
+
+    NamedCommands.registerCommand(
+    "ExtendClimber",
+      new ExtendClimberCommand(climber)
+    );
+
+    NamedCommands.registerCommand(
+      "RetractClimber", 
+      new RetractClimberCommand(climber)  
+    );
+
     configureBindings();
   }
 
@@ -136,10 +147,10 @@ public class RobotContainer {
 
     baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 15.0, 0.4, -0.35));
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.4, -0.75));
 
-    baseController.leftTrigger().onTrue(new DeployIntakeCommand(intake, 0.225, -0.4));
-    baseController.rightBumper().onTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
+    baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.4));
+    baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
 
     baseController.y().onTrue(new ExtendClimberCommand(climber));
     baseController.a().onTrue(new RetractClimberCommand(climber));

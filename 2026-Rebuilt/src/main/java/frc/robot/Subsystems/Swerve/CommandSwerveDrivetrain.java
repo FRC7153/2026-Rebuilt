@@ -259,8 +259,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
         //Limelight Configuration 
         double heading = getState().Pose.getRotation().getDegrees();
-        LimelightHelpers.SetRobotOrientation(AprilTagConstants.LL_4_LEFT, heading, 0, 0, 0, 0, 0);
-        LimelightHelpers.SetRobotOrientation(AprilTagConstants.LL_4_RIGHT, heading, 0, 0, 0, 0, 0);
+        LimelightHelpers.SetRobotOrientation(AprilTagConstants.LL_4_FRONT, heading, 0, 0, 0, 0, 0);
+        LimelightHelpers.SetRobotOrientation(AprilTagConstants.LL_3_BACK, heading, 0, 0, 0, 0, 0);
 
         updateVision();
     }
