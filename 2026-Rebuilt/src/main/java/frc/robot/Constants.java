@@ -30,13 +30,13 @@ public class Constants {
         public static final double FRONT_CAMERA_HEIGHT = 0.0; //TODO Meters
         public static final double TARGET_HEIGHT = 1.12; //TODO Meters
         public static final double CAMERA_ANGLE_HEIGHT = 0.0; //TODO Meters
+
+        public static final AprilTagFieldLayout FIELD =
+            AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);//TODO 
     }
     public class BuildConstants {
         public static final boolean PUBLISH_EVERYTHING = true;
         public static final boolean INCLUDE_TEST_AUTOS = true;
-
-        public static final AprilTagFieldLayout FIELD =
-            AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);//TODO 
     }
 
     public class DashboardConstants {

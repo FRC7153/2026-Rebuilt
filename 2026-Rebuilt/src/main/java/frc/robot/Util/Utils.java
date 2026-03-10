@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.Constants.BuildConstants;
+import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Libs.Elastic;
 import frc.robot.Libs.Elastic.Notification;
 import frc.robot.Libs.Elastic.Notification.NotificationLevel;
@@ -100,7 +100,7 @@ public class Utils {
    * @return The 2d position of the tag on the field
    */
   public static Translation2d getTagPose(int tag) {
-    Optional<Pose3d> pose = BuildConstants.FIELD.getTagPose(tag);
+    Optional<Pose3d> pose = AprilTagConstants.FIELD.getTagPose(tag);
 
     if (pose.isEmpty()) {
       // Unknown tag

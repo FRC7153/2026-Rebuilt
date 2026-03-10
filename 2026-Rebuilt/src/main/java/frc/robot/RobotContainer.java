@@ -89,6 +89,22 @@ public class RobotContainer {
       new RetractClimberCommand(climber)  
     );
 
+    NamedCommands.registerCommand(
+      "StationaryShoot", 
+      new ShootCommand(shooter, 24.25 , 0.4, -0.75)
+    );
+
+    NamedCommands.registerCommand(
+      "ExtendIntake", 
+      new DeployIntakeCommand(intake, 0.25, -0.75)
+    );
+
+    NamedCommands.registerCommand(
+      "RetractIntake", 
+      new DeployIntakeCommand(intake, 0.0008, -0.75)
+    );
+    
+
     configureBindings();
   }
 
@@ -155,6 +171,11 @@ public class RobotContainer {
     baseController.y().onTrue(new ExtendClimberCommand(climber));
     baseController.a().onTrue(new RetractClimberCommand(climber));
     baseController.x().onTrue(new ZeroClimber(climber));
+
+    // Arms Controls
+    armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.4));
+    armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
+    armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, -0.4));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }

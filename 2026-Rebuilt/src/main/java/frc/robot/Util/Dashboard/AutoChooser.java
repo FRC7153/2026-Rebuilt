@@ -100,6 +100,7 @@ public class AutoChooser {
 
 
     PathPlannerPath testPath = loadPath("TestAuto");
+    PathPlannerPath bumpPath = loadPath("BumpAuto");
     
     if(testPath != null){
       chooser.addOption("Test Auto",
@@ -108,6 +109,12 @@ public class AutoChooser {
         )
       ); 
     } 
+
+    if(bumpPath != null) {
+      chooser.addOption("BumpAuto", 
+        Pair.of(getStartPose(bumpPath), 
+        () -> AutoBuilder.buildAuto("BumpAuto")));
+    }
 
     
     // Add the chooser to the dashboard
