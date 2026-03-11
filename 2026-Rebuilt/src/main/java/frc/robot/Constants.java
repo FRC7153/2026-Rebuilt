@@ -86,12 +86,12 @@ public class Constants {
 
     public class IntakeConstants {
         // Intake gear ratios
-        public static final double INTAKE_PIVOT_GEAR_RATIO = 15.0 / 1.0; //TODO
+        public static final double INTAKE_PIVOT_GEAR_RATIO = 15.0 / 1.0; 
 
         public static final Slot0Configs INTAKE_PIVOT_GAINS = new Slot0Configs()
             .withKP(80.0).withKI(0.0).withKD(4.0)
             .withKS(0.25).withKV(2.5).withKA(0.14118)
-            .withKG(0.3).withGravityType(GravityTypeValue.Arm_Cosine); //TODO
+            .withKG(0.3).withGravityType(GravityTypeValue.Arm_Cosine); 
         
         public static final MotionMagicConfigs intakePivotMotionMagiv = new MotionMagicConfigs()
             .withMotionMagicCruiseVelocity(40)
@@ -103,20 +103,20 @@ public class Constants {
                 .withSupplyCurrentLimit(60)
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimit(80)
-                .withStatorCurrentLimitEnable(true);//TODO
+                .withStatorCurrentLimitEnable(true);
         
         public static final FeedbackConfigs INTAKE_PIVOT_ENCODER_CONFIGS = new FeedbackConfigs()
             .withSensorToMechanismRatio(INTAKE_PIVOT_GEAR_RATIO);
         
         public static final MotorOutputConfigs INTAKE_PIVOT_OUTPUT_CONFIGS = new MotorOutputConfigs()
-            .withInverted(InvertedValue.Clockwise_Positive) //TODO
+            .withInverted(InvertedValue.Clockwise_Positive) 
             .withNeutralMode(NeutralModeValue.Brake);
         
         public static final SoftwareLimitSwitchConfigs INTAKE_SOFWARE_CONFIGS = new SoftwareLimitSwitchConfigs()
             .withForwardSoftLimitEnable(false)
-            .withForwardSoftLimitThreshold(0.222)
+            .withForwardSoftLimitThreshold(0.222) //TODO
             .withReverseSoftLimitEnable(false)
-            .withReverseSoftLimitThreshold(0.0025);
+            .withReverseSoftLimitThreshold(0.0025); //TODO
         
         // Intake Pivot Configs Kraken x60 pivot 
         public static final TalonFXConfiguration INTAKE_PIVOT_CONFIGS = new TalonFXConfiguration()
@@ -140,13 +140,13 @@ public class Constants {
 
         public static final ClosedLoopConfig CLIMBER_PID = new ClosedLoopConfig()
             .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pid(0.1, 0.0, 0.01); //TODO
+            .pid(0.1, 0.0, 0.01); 
         
         // Climber Configs Neo vortex pivot 
         public static final SparkBaseConfig CLIMBER_CONFIG = new SparkFlexConfig()
             .idleMode(IdleMode.kBrake)
-            .inverted(false)//TODO
-            .smartCurrentLimit(50)//TODO
+            .inverted(false)
+            .smartCurrentLimit(50)
             .apply(CLIMBER_PID);
     }
     
@@ -165,7 +165,7 @@ public class Constants {
                 .withSupplyCurrentLimit(60)
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimit(80)
-                .withStatorCurrentLimitEnable(true);//TODO
+                .withStatorCurrentLimitEnable(true);
 
         private static final FeedbackConfigs SHOOTER_ENCODER_CONFIGS = new FeedbackConfigs()
             .withSensorToMechanismRatio(SHOOTER_GEAR_RATIO);
@@ -186,13 +186,13 @@ public class Constants {
         public static final ClosedLoopConfig KICKER_PID = new ClosedLoopConfig()
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(0.0004, 0.0, 0.0025)
-                .apply(KICKER_FF_CONFIGS); //TODO
+                .apply(KICKER_FF_CONFIGS); 
             
         // Kicker Configs Neo vortex  
         public static final SparkBaseConfig KICKER_CONFIG = new SparkFlexConfig()
                 .idleMode(IdleMode.kBrake)
-                .inverted(false)//TODO
-                .smartCurrentLimit(50)//TODO
+                .inverted(false)
+                .smartCurrentLimit(40)
                 .apply(KICKER_PID);
         
         public static final ClosedLoopConfig LIVEFLOOR_PID = new ClosedLoopConfig()
@@ -204,8 +204,8 @@ public class Constants {
                 
         public static final SparkBaseConfig LIVEFLOOR_CONFIG = new SparkFlexConfig()
                 .idleMode(IdleMode.kBrake)
-                .inverted(false)//TODO
-                .smartCurrentLimit(50)//TODO
+                .inverted(false)
+                .smartCurrentLimit(40)
                 .apply(LIVEFLOOR_PID);
     }
     public class RobotConstants {

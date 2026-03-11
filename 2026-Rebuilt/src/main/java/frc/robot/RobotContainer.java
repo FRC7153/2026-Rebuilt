@@ -54,7 +54,7 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    //private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     //private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
@@ -132,7 +132,7 @@ public class RobotContainer {
       Commands.run(() -> intake.holdLastPosition(), intake)
     );
 
-    //baseController.a().whileTrue(drivetrain.applyRequest(() -> brake));
+    baseController.a().whileTrue(drivetrain.applyRequest(() -> brake));
     //baseController.b().whileTrue(drivetrain.applyRequest(() ->
     //    point.withModuleDirection(new Rotation2d(-baseController.getLeftY(), -baseController.getLeftX()))
     //));
@@ -147,35 +147,27 @@ public class RobotContainer {
     isEnabledTrigger
       .onTrue(dashboard.getRestartTimerCommand())
       .onFalse(dashboard.getStopTimerCommand());
-    
-    //baseController.rightTrigger()
-      //.whileTrue(new ShootCommand(shooter));
 
     isTeleopTrigger
       .onTrue(new InstantCommand(() -> Elastic.selectTab(DashboardConstants.ELASTIC_SERVER_PORT)).ignoringDisable(true));
 
     baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-    baseController.leftBumper().and(baseController.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-    baseController.leftBumper().and(baseController.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-    baseController.rightBumper().and(baseController.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-    baseController.rightBumper().and(baseController.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.4, -0.60));
 
-    baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.4, -0.75));
-
-    baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.4));
+    baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.5));
     baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
 
-    baseController.y().onTrue(new ExtendClimberCommand(climber));
-    baseController.a().onTrue(new RetractClimberCommand(climber));
-    baseController.x().onTrue(new ZeroClimber(climber));
-
     // Arms Controls
-    armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.4));
+    armsController.y().onTrue(new ExtendClimberCommand(climber));
+    armsController.a().onTrue(new RetractClimberCommand(climber));
+    armsController.x().onTrue(new ZeroClimber(climber));
+
+    armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.5));
     armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
     armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, -0.4));
+
+    armsController.rightTrigger().whileTrue(new ShootCommand(shooter, -20, -0.4, -0.6));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }
@@ -193,23 +185,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    /* 
-    // Simple drive forward auton
-    final var idle = new SwerveRequest.Idle();
-    return Commands.sequence(
-        // Reset our field centric heading to match the robot
-        // facing away from our alliance station wall (0 deg).
-        drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-        // Then slowly drive forward (away from us) for 5 seconds.
-        drivetrain.applyRequest(() ->
-            drive.withVelocityX(0.5)
-                .withVelocityY(0)
-                .withRotationalRate(0)
-        )
-        .withTimeout(5.0),
-        // Finally idle for the rest of auton
-        drivetrain.applyRequest(() -> idle)
-    ); */
     return auto.getCurrentSelectedCommand();
   }
 

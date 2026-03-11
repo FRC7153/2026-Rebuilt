@@ -57,6 +57,7 @@ public class AutoChooser {
     // Autos that are used for testing
     chooser.setDefaultOption("No Auto", Pair.of(null, () -> noOpCommand));
 
+    /** 
     chooser.addOption("SYSID Shooter Q+", 
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), true, true)));
 
@@ -96,7 +97,7 @@ public class AutoChooser {
       Pair.of(null, () -> new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), false, true)));
     chooser.addOption("SYSID Intake Pivot D-",
       Pair.of(null, () -> new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), false, false)));
-
+    */
 
 
     PathPlannerPath testPath = loadPath("TestAuto");
