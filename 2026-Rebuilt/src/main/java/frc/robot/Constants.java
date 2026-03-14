@@ -131,7 +131,7 @@ public class Constants {
         public static final SparkBaseConfig INTAKE_CONFIG = new SparkFlexConfig()
             .idleMode(IdleMode.kBrake)
             .inverted(false)//TODO
-            .smartCurrentLimit(50);
+            .smartCurrentLimit(40);
     }
 
     public class ClimberConstants {

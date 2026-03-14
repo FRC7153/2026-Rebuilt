@@ -22,6 +22,7 @@ public class DeployIntakeCommand extends Command {
         m_intake.setIntakeSpeed(m_rollerSpeed);
     }
 
+
     @Override
     public void end(boolean interrupted) {
         m_intake.setIntakeSpeed(0.0); // always stop rollers

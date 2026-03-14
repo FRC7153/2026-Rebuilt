@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Commands.DeployIntakeCommand;
 import frc.robot.Commands.ExtendClimberCommand;
+import frc.robot.Commands.HoldIntakeCommand;
 import frc.robot.Commands.HomeIntakeCommand;
 import frc.robot.Commands.IntakeCommand;
 import frc.robot.Commands.IntakePivotCommand;
@@ -101,7 +102,7 @@ public class RobotContainer {
 
     NamedCommands.registerCommand(
       "RetractIntake", 
-      new DeployIntakeCommand(intake, 0.0008, -0.75)
+      new DeployIntakeCommand(intake, 0.0008, 0.0)
     );
     
 
@@ -123,14 +124,10 @@ public class RobotContainer {
             .withRotationalRate(-baseController.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
       )
     );
-
-    shooter.setDefaultCommand(
-      new ShootCommand(shooter, 0.0, 0.0, 0.0)
-      );
     
-    intake.setDefaultCommand(
-      Commands.run(() -> intake.holdLastPosition(), intake)
-    );
+    intake.setDefaultCommand(new HoldIntakeCommand(intake));
+
+    shooter.setDefaultCommand(new ShootCommand(shooter, 0.0, 0.0, 0.0));
 
     baseController.a().whileTrue(drivetrain.applyRequest(() -> brake));
     //baseController.b().whileTrue(drivetrain.applyRequest(() ->
@@ -158,6 +155,9 @@ public class RobotContainer {
     baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.5));
     baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
 
+    // Reverse Wheels
+    baseController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.5));
+
     // Arms Controls
     armsController.y().onTrue(new ExtendClimberCommand(climber));
     armsController.a().onTrue(new RetractClimberCommand(climber));
@@ -167,7 +167,11 @@ public class RobotContainer {
     armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
     armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, -0.4));
 
-    armsController.rightTrigger().whileTrue(new ShootCommand(shooter, -20, -0.4, -0.6));
+    armsController.rightTrigger().whileTrue(new ShootCommand(shooter, -20, -0.4, 0.6));
+
+    // Reverse Intake
+    armsController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.5));
+
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }

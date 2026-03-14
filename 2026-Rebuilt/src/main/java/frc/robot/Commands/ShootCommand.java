@@ -1,11 +1,7 @@
 package frc.robot.Commands;
 
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.Subsystems.Shooter;
     /**
      * Creates a command to set the shooter, kicker, and live floor speeds. This command is intended to be used as a default command for the shooter subsystem, so that the shooter can be set to a desired speed whenever it is not being used for other commands.
