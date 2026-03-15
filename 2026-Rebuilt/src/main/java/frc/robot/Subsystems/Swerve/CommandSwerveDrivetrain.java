@@ -356,8 +356,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         Pose2d visionPose = estimate.pose;
 
         var stdDevs = VecBuilder.fill(
-            0.4, // X TODO
-            0.4, // Y TODO
+            0.9, // X TODO
+            0.9, // Y TODO
             999999 // Theta TODO 
         );
 
@@ -391,5 +391,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 return alliance.isPresent() && alliance.get() == Alliance.Red;
             }, this);
 
-}
+    }
+
+    public void checkHardware() {
+
+    }
+
 }

@@ -27,9 +27,9 @@ public class Constants {
         public static final String LL_4_FRONT = "limelight-front";
         public static final String LL_3_BACK = "limelight-back";
 
-        public static final double FRONT_CAMERA_HEIGHT = 0.0; //TODO Meters
+        public static final double FRONT_CAMERA_HEIGHT = 0.55; //TODO Meters
         public static final double TARGET_HEIGHT = 1.12; //TODO Meters
-        public static final double CAMERA_ANGLE_HEIGHT = 0.0; //TODO Meters
+        public static final double CAMERA_ANGLE_DEG = 0.0; //TODO Degrees
 
         public static final AprilTagFieldLayout FIELD =
             AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);//TODO 
@@ -205,17 +205,12 @@ public class Constants {
         public static final SparkBaseConfig LIVEFLOOR_CONFIG = new SparkFlexConfig()
                 .idleMode(IdleMode.kBrake)
                 .inverted(false)
-                .smartCurrentLimit(40)
+                .smartCurrentLimit(30)
                 .apply(LIVEFLOOR_PID);
     }
     public class RobotConstants {
         // Intake Robot Constants
         public static final double INTAKE_PIVOT_STOW = 0.0; //TODO
         public static final double INTAKE_PIVOT_EXTEND = 0.0; //TODO
-
-        //Climber Constants 
-        public static final double CLIMBER_EXTEND = 225.0; //TODO
-        public static final double CLIMBER_ZERO = 0.0; //TODO
-        public static final double CLIMBER_RETRACT= 85.0; //todo
     }
 } 

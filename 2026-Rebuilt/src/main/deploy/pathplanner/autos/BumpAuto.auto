@@ -5,9 +5,28 @@
     "data": {
       "commands": [
         {
-          "type": "path",
+          "type": "parallel",
           "data": {
-            "pathName": "BumpAuto"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "BumpAuto"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "BumpAuto"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StationaryShoot"
           }
         }
       ]

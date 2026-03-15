@@ -80,8 +80,8 @@ public class ShooterRegression {
      * @return
      */
     public static double getShooterDistance(double tyDegrees) {
-        double angleRad = Math.toRadians(AprilTagConstants.CAMERA_ANGLE_HEIGHT +tyDegrees);        
-        return (AprilTagConstants.TARGET_HEIGHT - AprilTagConstants.CAMERA_ANGLE_HEIGHT) / Math.tan(angleRad);
+        double angleRad = Math.toRadians(AprilTagConstants.CAMERA_ANGLE_DEG +tyDegrees);        
+        return (AprilTagConstants.TARGET_HEIGHT - AprilTagConstants.CAMERA_ANGLE_DEG) / Math.tan(angleRad);
 
         
     }

@@ -12,7 +12,7 @@ import frc.robot.Subsystems.Shooter;
      */
 public class ShootCommand extends RunCommand {
 
-    private static final double VELOCITY_TOLERANCE = 5;
+    private static final double VELOCITY_TOLERANCE = 3;
 
     public ShootCommand(Shooter shooter, double shooterVelo, double kickerSpeed, double liveFloorSpeed) {
         super(() -> {
@@ -26,7 +26,7 @@ public class ShootCommand extends RunCommand {
                 shooter.setliveFloorSpeed(liveFloorSpeed);
             } else {
                 // Shooter ready → feed
-                new WaitCommand(5);
+                new WaitCommand(0.01);
                 shooter.setKickerSpeed(kickerSpeed);
                 shooter.setliveFloorSpeed(liveFloorSpeed);
             }

@@ -5,21 +5,27 @@
     "data": {
       "commands": [
         {
-          "type": "named",
-          "data": {
-            "name": "ExtendClimber"
-          }
-        },
-        {
           "type": "path",
           "data": {
-            "pathName": "TestAuto"
+            "pathName": "ShootAuto"
           }
         },
         {
           "type": "sequential",
           "data": {
             "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "ExtendIntake"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "StationaryShoot"
+                }
+              },
               {
                 "type": "wait",
                 "data": {
@@ -29,7 +35,13 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "RetractClimber"
+                  "name": "RetractIntakeSpin"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "RetractIntake"
                 }
               }
             ]

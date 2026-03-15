@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
 import frc.robot.Constants.BuildConstants;
 import frc.robot.Commands.SysID.SysIdCharacterizationCommand;
-import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Intake;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Swerve.CommandSwerveDrivetrain;
@@ -36,16 +35,14 @@ public class AutoChooser {
 
     private final CommandSwerveDrivetrain drive;
     private final Shooter shooter;
-    private final Climber climber;
     private final Intake intake;
 
     private final Alert noAutoLoadedAlert = new Alert("No auto loaded yet (run pregame)", AlertType.kInfo);
 
     private AutoBuilder autoBuilder = new AutoBuilder(); // For generating path following commands
-    public AutoChooser(CommandSwerveDrivetrain drive, Shooter shooter, Climber climber, Intake intake) {
+    public AutoChooser(CommandSwerveDrivetrain drive, Shooter shooter, Intake intake) {
         this.drive = drive;
         this.shooter = shooter;
-        this.climber = climber;
         this.intake = intake;
 
     // On change
@@ -70,16 +67,6 @@ public class AutoChooser {
     chooser.addOption("SYSID Shooter D-", 
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getShooterRoutine(shooter), false, false)));
 
-      //Climber SysId 
-    chooser.addOption("SYSID Climber Q+", 
-      Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), true, true)));
-    chooser.addOption("SYSID Climber Q-", 
-      Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), true, false)));
-    chooser.addOption("SYSID Climber D+", 
-      Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), false, true)));
-    chooser.addOption("SYSID Climber D-", 
-      Pair.of(null, () -> new SysIdCharacterizationCommand(Climber.getClimberRoutine(climber), false, false)));
-
     chooser.addOption("SYSID Kicker Q+",
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), true, true)));
     chooser.addOption("SYSID Kicker Q-",
@@ -100,13 +87,14 @@ public class AutoChooser {
     */
 
 
-    PathPlannerPath testPath = loadPath("TestAuto");
+    PathPlannerPath testPath = loadPath("ClimbAuto");
     PathPlannerPath bumpPath = loadPath("BumpAuto");
+    PathPlannerPath shootPath = loadPath("ShootAuto");
     
     if(testPath != null){
-      chooser.addOption("Test Auto",
+      chooser.addOption("ClimbAuto",
         Pair.of(getStartPose(testPath), 
-          () -> AutoBuilder.buildAuto("TestAuto")
+          () -> AutoBuilder.buildAuto("ClimbAuto")
         )
       ); 
     } 
@@ -115,6 +103,12 @@ public class AutoChooser {
       chooser.addOption("BumpAuto", 
         Pair.of(getStartPose(bumpPath), 
         () -> AutoBuilder.buildAuto("BumpAuto")));
+    }
+
+    if(shootPath != null){
+      chooser.addOption("ShootAuto", 
+        Pair.of(getStartPose(shootPath),
+        () -> AutoBuilder.buildAuto("ShootAuto")));
     }
 
     

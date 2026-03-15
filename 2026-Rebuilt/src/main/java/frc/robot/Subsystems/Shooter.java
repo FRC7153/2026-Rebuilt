@@ -65,7 +65,7 @@ public class Shooter implements Subsystem{
     private final Alert kickerAlert = new Alert("Kicker Alert", AlertType.kError);
     private final Alert liveFloorAlert = new Alert("Live Floor Alert", AlertType.kError);
 
-    private final LimelightHelpers limelight; 
+    private final LimelightHelpers limelight;
     
     private static SysIdRoutine shooterRoutine, kickerRoutine;
     
@@ -189,23 +189,23 @@ public class Shooter implements Subsystem{
     }
 
     public boolean setVelocityFromLimelight() {
-    if (LimelightHelpers.getTargetCount(AprilTagConstants.LL_3_BACK) < 1) {
-      shooter.stopMotor();;
-      return false;
+        if (LimelightHelpers.getTargetCount(AprilTagConstants.LL_4_FRONT) < 1) {
+        shooter.stopMotor();
+        return false;
+        }
+
+        double ty = LimelightHelpers.getTY(AprilTagConstants.LL_4_FRONT);
+        double distance = ShooterRegression.getShooterDistance(ty);
+        double targetVel = ShooterRegression.getVelocityMetersPerSec(distance);
+
+        double targetRPS = targetVel;
+
+        shooter.setControl(shooterVeloRequest.withVelocity(targetRPS));
+
+        // Ready when within ±10 RPS of target
+        double currentRPS = shooter.getVelocity().getValueAsDouble();
+        return Math.abs(currentRPS - targetRPS) < 10.0;
     }
-
-    double ty = LimelightHelpers.getTY(AprilTagConstants.LL_4_FRONT);
-    double distance = ShooterRegression.getShooterDistance(ty);
-    double targetVel = ShooterRegression.getVelocityMetersPerSec(distance);
-
-    double targetRPS = targetVel;
-
-    shooter.setControl(shooterVeloRequest.withVelocity(targetRPS));
-
-    // Ready when within ±100 RPM of target
-    double currentRPS = shooter.getVelocity().getValueAsDouble();
-    return Math.abs(currentRPS - targetRPS) < 100.0;
-  }
 
 
     public static SysIdRoutine getShooterRoutine(Shooter shooter) {

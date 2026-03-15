@@ -6,38 +6,25 @@ package frc.robot;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
-import com.pathplanner.lib.controllers.PPHolonomicDriveController;
-import com.pathplanner.lib.config.PIDConstants;
-import com.pathplanner.lib.config.RobotConfig;
-
 import static edu.wpi.first.units.Units.*;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Commands.DeployIntakeCommand;
-import frc.robot.Commands.ExtendClimberCommand;
 import frc.robot.Commands.HoldIntakeCommand;
 import frc.robot.Commands.HomeIntakeCommand;
-import frc.robot.Commands.IntakeCommand;
-import frc.robot.Commands.IntakePivotCommand;
-import frc.robot.Commands.RetractClimberCommand;
 import frc.robot.Commands.ShootCommand;
-import frc.robot.Commands.ZeroClimber;
 import frc.robot.Constants.DashboardConstants;
 import frc.robot.Libs.Elastic;
-import frc.robot.Subsystems.Climber;
 import frc.robot.Subsystems.Intake;
 import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Swerve.CommandSwerveDrivetrain;
@@ -68,11 +55,10 @@ public class RobotContainer {
 
   //Subsystems
   private final Shooter shooter = Utils.timeInstantiation(() -> new Shooter());
-  private final Climber climber = Utils.timeInstantiation(() -> new Climber());
   private final Intake intake = Utils.timeInstantiation(() -> new Intake());
 
   // Auto
-  private final AutoChooser auto = new AutoChooser(drivetrain, shooter, climber, intake);
+  private final AutoChooser auto = new AutoChooser(drivetrain, shooter, intake);
   private final Dashboard dashboard = new Dashboard(baseController, armsController);
   private final Command homeIntakeCommand = new HomeIntakeCommand(intake);
 
@@ -81,30 +67,38 @@ public class RobotContainer {
     //SmartDashboard.putData("Home Intake", homeIntakeCommand);
 
     NamedCommands.registerCommand(
-    "ExtendClimber",
-      new ExtendClimberCommand(climber)
-    );
-
-    NamedCommands.registerCommand(
-      "RetractClimber", 
-      new RetractClimberCommand(climber)  
-    );
-
-    NamedCommands.registerCommand(
       "StationaryShoot", 
-      new ShootCommand(shooter, 24.25 , 0.4, -0.75)
+      new SequentialCommandGroup(
+        new ParallelCommandGroup(
+          new DeployIntakeCommand(intake, 0.25, 0.6).withTimeout(1.5)
+          .andThen(new DeployIntakeCommand(intake, 0.0008, 0.6).withTimeout(1.5)), 
+          new ShootCommand(shooter, 24.25, 0.5, -0.7)
+        )
+      )
     );
 
     NamedCommands.registerCommand(
       "ExtendIntake", 
-      new DeployIntakeCommand(intake, 0.25, -0.75)
+      new DeployIntakeCommand(intake, 0.25, -0.5).withTimeout(3.0)
     );
 
     NamedCommands.registerCommand(
       "RetractIntake", 
-      new DeployIntakeCommand(intake, 0.0008, 0.0)
+      new DeployIntakeCommand(intake, 0.0008, 0.0).withTimeout(2.0)
     );
-    
+
+    NamedCommands.registerCommand(
+      "RetractIntakeSpin", 
+      new DeployIntakeCommand(intake, 0.0008, -0.5).withTimeout(3.0)
+    );
+
+    NamedCommands.registerCommand("BumpAuto", 
+      new SequentialCommandGroup(
+        new WaitCommand(2.5),
+        new DeployIntakeCommand(intake, 0.25, -0.6).withTimeout(2.75),
+        new DeployIntakeCommand(intake, 0.0008, 0.0)
+      )
+    );
 
     configureBindings();
   }
@@ -150,27 +144,22 @@ public class RobotContainer {
 
     baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.4, -0.60));
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.5, -0.70));
 
-    baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.5));
+    baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.7));
     baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
 
-    // Reverse Wheels
-    baseController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.5));
+    // Reverse Intake
+    baseController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.8));
 
-    // Arms Controls
-    armsController.y().onTrue(new ExtendClimberCommand(climber));
-    armsController.a().onTrue(new RetractClimberCommand(climber));
-    armsController.x().onTrue(new ZeroClimber(climber));
-
-    armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.5));
+    armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.7));
     armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
     armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, -0.4));
 
     armsController.rightTrigger().whileTrue(new ShootCommand(shooter, -20, -0.4, 0.6));
 
     // Reverse Intake
-    armsController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.5));
+    armsController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.8));
 
 
     drivetrain.registerTelemetry(logger::telemeterize);
@@ -179,13 +168,13 @@ public class RobotContainer {
   public void checkHardware(){
     dashboard.checkHardware();
     shooter.checkHardware();
-    climber.checkHardware();
+    intake.checkHardware();
   }
 
   public void log(){
     dashboard.update();
     shooter.log(); 
-    climber.log();
+    intake.log();
   }
 
   public Command getAutonomousCommand() {
