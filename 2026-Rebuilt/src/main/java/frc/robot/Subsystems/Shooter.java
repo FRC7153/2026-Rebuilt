@@ -70,7 +70,7 @@ public class Shooter implements Subsystem{
     private static SysIdRoutine shooterRoutine, kickerRoutine;
     
     // NT Logging 
-    private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub, liveFloorVeloPub, liveFloorSetPointPub;
+    private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub, liveFloorVeloPub, liveFloorSetpointPub;
 
     private final DoublePublisher LLdistance;
 
@@ -120,10 +120,14 @@ public class Shooter implements Subsystem{
             liveFloorVeloPub = nt.getDoubleTopic("liveFloorVelo").publish();
             kickerSetPointPub = nt.getDoubleTopic("kickerSetpoint").publish();
             shooterSetpointPub = nt.getDoubleTopic("shooterSetpoint").publish();
-            liveFloorSetPointPub = nt.getDoubleTopic("liveFloorSetpoint").publish();
+            liveFloorSetpointPub = nt.getDoubleTopic("liveFloorSetpoint").publish();
         } else {
             kickerVeloPub = null;
             shooterVeloPub = null;
+            liveFloorVeloPub = null;
+            kickerSetPointPub = null;
+            shooterSetpointPub = null;
+            liveFloorSetpointPub = null;
         }
     }
 
@@ -162,7 +166,7 @@ public class Shooter implements Subsystem{
         liveFLoorSetpointLog.append(speed);
 
         if(BuildConstants.PUBLISH_EVERYTHING){
-            liveFloorSetPointPub.set(speed);
+            liveFloorSetpointPub.set(speed);
         }
     }
 

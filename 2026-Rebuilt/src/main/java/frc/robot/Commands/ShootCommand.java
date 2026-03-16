@@ -12,7 +12,7 @@ import frc.robot.Subsystems.Shooter;
      */
 public class ShootCommand extends RunCommand {
 
-    private static final double VELOCITY_TOLERANCE = 3;
+    private static final double VELOCITY_TOLERANCE = 5;
 
     public ShootCommand(Shooter shooter, double shooterVelo, double kickerSpeed, double liveFloorSpeed) {
         super(() -> {

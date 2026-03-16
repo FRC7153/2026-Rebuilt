@@ -20,10 +20,12 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Commands.DeployIntakeCommand;
+import frc.robot.Commands.DistanceShootCommand;
 import frc.robot.Commands.HoldIntakeCommand;
 import frc.robot.Commands.HomeIntakeCommand;
 import frc.robot.Commands.ShootCommand;
 import frc.robot.Constants.DashboardConstants;
+import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.Elastic;
 import frc.robot.Subsystems.Intake;
 import frc.robot.Subsystems.Shooter;
@@ -71,8 +73,10 @@ public class RobotContainer {
       new SequentialCommandGroup(
         new ParallelCommandGroup(
           new DeployIntakeCommand(intake, 0.25, 0.6).withTimeout(1.5)
-          .andThen(new DeployIntakeCommand(intake, 0.0008, 0.6).withTimeout(1.5)), 
-          new ShootCommand(shooter, 24.25, 0.5, -0.7)
+          .andThen(new DeployIntakeCommand(intake, 0.0008, 0.6).withTimeout(1.5))
+          .andThen(new DeployIntakeCommand(intake, 0.25, 0.6).withTimeout(1.5))
+          .andThen(new DeployIntakeCommand(intake, 0.25, 0.6).withTimeout(1.5)), 
+          new ShootCommand(shooter, 24.25, 0.5, -0.7).withTimeout(4)
         )
       )
     );
@@ -95,8 +99,8 @@ public class RobotContainer {
     NamedCommands.registerCommand("BumpAuto", 
       new SequentialCommandGroup(
         new WaitCommand(2.5),
-        new DeployIntakeCommand(intake, 0.25, -0.6).withTimeout(2.75),
-        new DeployIntakeCommand(intake, 0.0008, 0.0)
+        new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.6).withTimeout(2.75),
+        new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0)
       )
     );
 
@@ -146,21 +150,26 @@ public class RobotContainer {
 
     baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.5, -0.70));
 
-    baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.7));
-    baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
+    baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
+    baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
 
     // Reverse Intake
     baseController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.8));
 
-    armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, 0.25, -0.7));
-    armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, 0.0));
-    armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, 0.0008, -0.4));
+    //Distance Shoot Command 
+    baseController.y().whileTrue(new DistanceShootCommand(shooter));
+
+    // Toggle Intake 
+    armsController.y().whileTrue(new DeployIntakeCommand(intake, 0.18, 0.0));
+
+    armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
+    armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
+    armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, -0.4));
 
     armsController.rightTrigger().whileTrue(new ShootCommand(shooter, -20, -0.4, 0.6));
 
     // Reverse Intake
-    armsController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.8));
-
+    armsController.b().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, 0.8));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }
