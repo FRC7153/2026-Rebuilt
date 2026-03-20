@@ -102,7 +102,7 @@ public class Intake implements Subsystem{
     }
 
     public void setIntakePivotPosition(double position) {
-        position = MathUtil.clamp(position, 0, 360);//TODO
+        position = MathUtil.clamp(position, 0, 2.6);
 
         intakePivot.setControl(pivotMotionMagicRequest.withPosition(position));
         intakePivotSetpointLog.append(position);
@@ -175,7 +175,6 @@ public class Intake implements Subsystem{
         intakePivotPositionLog.append(getIntakePivotPosition());
         intakeVeloLog.append(intakeEncoder.getVelocity());
 
-
         if (BuildConstants.PUBLISH_EVERYTHING) {
             intakeVeloPub.set(intakeEncoder.getVelocity());
             intakePivotPositionPub.set(getIntakePivotPosition());
@@ -186,7 +185,4 @@ public class Intake implements Subsystem{
         HardwareFaultTracker.checkFault(intakeAlert, intake.hasActiveFault() || intake.hasActiveWarning());
         HardwareFaultTracker.checkFault(intakePivotAlert, !intakePivot.isAlive() || !intakePivot.isConnected());
     }
-
-
-
 }

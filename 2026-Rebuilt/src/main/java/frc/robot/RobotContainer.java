@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -24,6 +25,7 @@ import frc.robot.Commands.DistanceShootCommand;
 import frc.robot.Commands.HoldIntakeCommand;
 import frc.robot.Commands.HomeIntakeCommand;
 import frc.robot.Commands.ShootCommand;
+import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Constants.DashboardConstants;
 import frc.robot.Constants.RobotConstants;
 import frc.robot.Libs.Elastic;
@@ -32,6 +34,8 @@ import frc.robot.Subsystems.Shooter;
 import frc.robot.Subsystems.Swerve.CommandSwerveDrivetrain;
 import frc.robot.Subsystems.Swerve.Telemetry;
 import frc.robot.Subsystems.Swerve.TunerConstants;
+import frc.robot.Subsystems.Vision.Limelight;
+import frc.robot.Subsystems.Vision.Limelight.Version;
 import frc.robot.Util.Utils;
 import frc.robot.Util.Dashboard.AutoChooser;
 import frc.robot.Util.Dashboard.Dashboard;
@@ -58,6 +62,8 @@ public class RobotContainer {
   //Subsystems
   private final Shooter shooter = Utils.timeInstantiation(() -> new Shooter());
   private final Intake intake = Utils.timeInstantiation(() -> new Intake());
+  private final Limelight limelightFront = Utils.timeInstantiation(() -> new Limelight(AprilTagConstants.LL_4_FRONT, Version.LIMELIGHT_4));
+  private final Limelight limelightBack = Utils.timeInstantiation(() -> new Limelight(AprilTagConstants.LL_3_BACK, Version.LIMELIGHT_3G));
 
   // Auto
   private final AutoChooser auto = new AutoChooser(drivetrain, shooter, intake);
@@ -65,7 +71,7 @@ public class RobotContainer {
   private final Command homeIntakeCommand = new HomeIntakeCommand(intake);
 
   public RobotContainer() {
-    FollowPathCommand.warmupCommand().schedule(); // Warm up the path planner command to reduce latency on the first path following command
+    CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
     //SmartDashboard.putData("Home Intake", homeIntakeCommand);
 
     NamedCommands.registerCommand(
@@ -127,7 +133,7 @@ public class RobotContainer {
 
     shooter.setDefaultCommand(new ShootCommand(shooter, 0.0, 0.0, 0.0));
 
-    baseController.a().whileTrue(drivetrain.applyRequest(() -> brake));
+    baseController.y().whileTrue(drivetrain.applyRequest(() -> brake));
     //baseController.b().whileTrue(drivetrain.applyRequest(() ->
     //    point.withModuleDirection(new Rotation2d(-baseController.getLeftY(), -baseController.getLeftX()))
     //));
@@ -157,7 +163,7 @@ public class RobotContainer {
     baseController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.8));
 
     //Distance Shoot Command 
-    baseController.y().whileTrue(new DistanceShootCommand(shooter));
+    baseController.a().and(baseController.rightTrigger()).whileTrue(new DistanceShootCommand(shooter));
 
     // Toggle Intake 
     armsController.y().whileTrue(new DeployIntakeCommand(intake, 0.18, 0.0));
@@ -178,12 +184,16 @@ public class RobotContainer {
     dashboard.checkHardware();
     shooter.checkHardware();
     intake.checkHardware();
+    limelightBack.checkHardware();
+    limelightFront.checkHardware();
   }
 
   public void log(){
     dashboard.update();
     shooter.log(); 
     intake.log();
+    limelightBack.log();
+    limelightFront.log();
   }
 
   public Command getAutonomousCommand() {

@@ -15,11 +15,10 @@ public class DistanceShootCommand extends Command {
   public void execute() {
     // Spin up to regression-predicted velocity each loop
     shooter.setVelocityFromLimelight(); 
-                // Shooter ready → feed
-                new WaitCommand(1);
-                shooter.setKickerSpeed(0.5);
-                shooter.setliveFloorSpeed(-0.7);
-            
+      // Shooter ready → feed
+      new WaitCommand(1);
+      shooter.setKickerSpeed(0.5);
+      shooter.setliveFloorSpeed(-0.7);
   }
 
   public boolean isFinished() {

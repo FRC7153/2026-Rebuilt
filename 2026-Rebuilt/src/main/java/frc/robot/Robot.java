@@ -88,7 +88,7 @@ public final class Robot extends TimedRobot {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
+      CommandScheduler.getInstance().schedule(m_autonomousCommand);
     }
   }
 
@@ -99,7 +99,7 @@ public final class Robot extends TimedRobot {
   public void autonomousExit() {
     // Cancel auto
     if (m_autonomousCommand != null) {
-      m_autonomousCommand.cancel();
+      CommandScheduler.getInstance().cancelAll();
       m_autonomousCommand = null;
     }
   }

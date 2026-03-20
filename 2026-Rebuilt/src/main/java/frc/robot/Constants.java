@@ -8,6 +8,7 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.VoltageConfigs;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -100,7 +101,7 @@ public class Constants {
         
         public static final CurrentLimitsConfigs INTAKE_PIVOT_CURRENT_LIMITS_CONFIGS =
             new CurrentLimitsConfigs()
-                .withSupplyCurrentLimit(60)
+                .withSupplyCurrentLimit(40) //TODO Old was 60
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimit(80)
                 .withStatorCurrentLimitEnable(true);
@@ -127,27 +128,10 @@ public class Constants {
             .withMotionMagic(intakePivotMotionMagiv)
             .withSoftwareLimitSwitch(INTAKE_SOFWARE_CONFIGS);
 
-        
         public static final SparkBaseConfig INTAKE_CONFIG = new SparkFlexConfig()
             .idleMode(IdleMode.kBrake)
             .inverted(false)//TODO
-            .smartCurrentLimit(40);
-    }
-
-    public class ClimberConstants {
-        // Climber gear ratios
-        public static final double CLIMBER_GEAR_RATIO = 125.0 / 1.0; 
-
-        public static final ClosedLoopConfig CLIMBER_PID = new ClosedLoopConfig()
-            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-            .pid(0.1, 0.0, 0.01); 
-        
-        // Climber Configs Neo vortex pivot 
-        public static final SparkBaseConfig CLIMBER_CONFIG = new SparkFlexConfig()
-            .idleMode(IdleMode.kBrake)
-            .inverted(false)
-            .smartCurrentLimit(50)
-            .apply(CLIMBER_PID);
+            .smartCurrentLimit(30);
     }
     
     public class ShooterConstants {
@@ -164,8 +148,14 @@ public class Constants {
             new CurrentLimitsConfigs()
                 .withSupplyCurrentLimit(60)
                 .withSupplyCurrentLimitEnable(true)
+                .withSupplyCurrentLowerLimit(40)
+                .withSupplyCurrentLowerTime(1)//Seconds
                 .withStatorCurrentLimit(80)
                 .withStatorCurrentLimitEnable(true);
+        
+        private static final VoltageConfigs SHOOTER_VOLTAGE_CONFIGS = new VoltageConfigs()
+            .withPeakForwardVoltage(12.0) // Volts
+            .withPeakReverseVoltage(12.0); // Volts
 
         private static final FeedbackConfigs SHOOTER_ENCODER_CONFIGS = new FeedbackConfigs()
             .withSensorToMechanismRatio(SHOOTER_GEAR_RATIO);
@@ -178,7 +168,8 @@ public class Constants {
             .withSlot0(SHOOTER_GAINS)
             .withCurrentLimits(SHOOTER_CURRENT_LIMITS_CONFIGS)
             .withFeedback(SHOOTER_ENCODER_CONFIGS)
-            .withMotorOutput(SHOOTER_OUTPUT_CONFIGS);
+            .withMotorOutput(SHOOTER_OUTPUT_CONFIGS)
+            .withVoltage(SHOOTER_VOLTAGE_CONFIGS);
         
         public static final FeedForwardConfig KICKER_FF_CONFIGS = new FeedForwardConfig()
             .sva(0.0074999, 0.0002, 0.00001195, ClosedLoopSlot.kSlot0); //TODO
@@ -187,7 +178,7 @@ public class Constants {
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
                 .pid(0.0004, 0.0, 0.0025)
                 .apply(KICKER_FF_CONFIGS); 
-            
+        
         // Kicker Configs Neo vortex  
         public static final SparkBaseConfig KICKER_CONFIG = new SparkFlexConfig()
                 .idleMode(IdleMode.kBrake)
