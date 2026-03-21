@@ -163,7 +163,7 @@ public class RobotContainer {
     baseController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.8));
 
     //Distance Shoot Command 
-    baseController.a().and(baseController.rightTrigger()).whileTrue(new DistanceShootCommand(shooter));
+    //baseController.a().and(baseController.rightTrigger()).whileTrue(new DistanceShootCommand(shooter));
 
     // Toggle Intake 
     armsController.y().whileTrue(new DeployIntakeCommand(intake, 0.18, 0.0));
@@ -202,7 +202,7 @@ public class RobotContainer {
 
   public void pregameLoad() {
     auto.loadAutoCommand();
-  }
+  } 
 
   public Command getHomeIntakeCommand() {
     return homeIntakeCommand;

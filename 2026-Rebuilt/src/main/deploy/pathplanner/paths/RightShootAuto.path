@@ -48,12 +48,28 @@
     },
     {
       "anchor": {
-        "x": 13.55948121645796,
-        "y": 5.276243291592128
+        "x": 13.15543181818182,
+        "y": 5.16875
       },
       "prevControl": {
-        "x": 13.191511629529035,
-        "y": 5.324079222618158
+        "x": 12.787462231252894,
+        "y": 5.21658593102603
+      },
+      "nextControl": {
+        "x": 13.523401405110745,
+        "y": 5.1209140689739705
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 13.289420454545455,
+        "y": 4.024693181818182
+      },
+      "prevControl": {
+        "x": 13.535798195532282,
+        "y": 3.982290248591476
       },
       "nextControl": null,
       "isLocked": false,
@@ -72,18 +88,37 @@
   ],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "ExtendIntake",
+      "waypointRelativePos": 0,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "RetractIntake",
+      "waypointRelativePos": 2.144144144144144,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "StationaryShoot",
+      "waypointRelativePos": 3.3633633633633635,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
   "globalConstraints": {
-    "maxVelocity": 1.5,
-    "maxAcceleration": 3.0,
-    "maxAngularVelocity": 540.0,
+    "maxVelocity": 3.0,
+    "maxAcceleration": 4.0,
+    "maxAngularVelocity": 270.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,
     "unlimited": false
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": -142.30575953331092
+    "rotation": 180.0
   },
   "reversed": false,
   "folder": null,
@@ -91,5 +126,5 @@
     "velocity": 0,
     "rotation": 180.0
   },
-  "useDefaultConstraints": false
+  "useDefaultConstraints": true
 }
