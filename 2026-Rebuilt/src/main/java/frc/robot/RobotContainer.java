@@ -8,6 +8,9 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import com.pathplanner.lib.events.EventTrigger;
+import com.pathplanner.lib.path.EventMarker;
+
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.wpilibj.DriverStation;
@@ -44,16 +47,16 @@ public class RobotContainer {
   private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
   private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
-    /* Setting up bindings for necessary control of the swerve drive platform */
-    private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
-            .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-    //private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
+  /* Setting up bindings for necessary control of the swerve drive platform */
+  private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
+          .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+          .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+  private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+  //private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
-    private final Telemetry logger = new Telemetry(MaxSpeed);
+  private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+  public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
   // Controllers
   private final CommandXboxController baseController = new CommandXboxController(0);
@@ -66,7 +69,7 @@ public class RobotContainer {
   private final Limelight limelightBack = Utils.timeInstantiation(() -> new Limelight(AprilTagConstants.LL_3_BACK, Version.LIMELIGHT_3G));
 
   // Auto
-  private final AutoChooser auto = new AutoChooser(drivetrain, shooter, intake);
+  private final AutoChooser auto;
   private final Dashboard dashboard = new Dashboard(baseController, armsController);
   private final Command homeIntakeCommand = new HomeIntakeCommand(intake);
 
@@ -78,23 +81,24 @@ public class RobotContainer {
       "StationaryShoot", 
       new SequentialCommandGroup(
         new ParallelCommandGroup(
-          new DeployIntakeCommand(intake, 0.25, 0.6).withTimeout(1.5)
-          .andThen(new DeployIntakeCommand(intake, 0.0008, 0.6).withTimeout(1.5))
-          .andThen(new DeployIntakeCommand(intake, 0.25, 0.6).withTimeout(1.5))
-          .andThen(new DeployIntakeCommand(intake, 0.25, 0.6).withTimeout(1.5)), 
+          new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.6).withTimeout(1.5)
+          .andThen(new DeployIntakeCommand(intake, 0.0008, -0.6).withTimeout(1.5))
+          .andThen(new DeployIntakeCommand(intake, 0.25, -0.6).withTimeout(1.5))
+          .andThen(new DeployIntakeCommand(intake, 0.25, -0.6).withTimeout(1.5)), 
           new ShootCommand(shooter, 24.25, 0.5, -0.7).withTimeout(4)
         )
       )
     );
 
+
     NamedCommands.registerCommand(
       "ExtendIntake", 
-      new DeployIntakeCommand(intake, 0.25, -0.5).withTimeout(3.0)
+      new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.5).withTimeout(3.0)
     );
 
     NamedCommands.registerCommand(
       "RetractIntake", 
-      new DeployIntakeCommand(intake, 0.0008, 0.0).withTimeout(2.0)
+      new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0).withTimeout(2.0)
     );
 
     NamedCommands.registerCommand(
@@ -110,7 +114,15 @@ public class RobotContainer {
       )
     );
 
-    configureBindings();
+
+    new EventTrigger("ExtendIntake")
+      .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
+
+    new EventTrigger("RetractIntake")
+      .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
+    configureBindings(); 
+
+    auto = new AutoChooser(drivetrain, shooter, intake);
   }
 
   private void configureBindings() {
