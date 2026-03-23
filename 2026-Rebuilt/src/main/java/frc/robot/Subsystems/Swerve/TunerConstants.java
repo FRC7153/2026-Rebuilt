@@ -87,7 +87,7 @@ public class TunerConstants {
 
     // Theoretical free speed (m/s) at 12 V applied output;
     // This needs to be tuned to your individual robot
-    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(2);
+    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(2.5);
 
     // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
     // This may need to be tuned to your individual robot
@@ -161,10 +161,10 @@ public class TunerConstants {
     private static final Distance kFrontRightYPos = Inches.of(-11);
 
     // Back Left
-    private static final int kBackLeftDriveMotorId = 5;
+    private static final int kBackLeftDriveMotorId = 5;  
     private static final int kBackLeftSteerMotorId = 6;
     private static final int kBackLeftEncoderId = 11;
-    private static final Angle kBackLeftEncoderOffset = Rotations.of(0.273193359375);//(-0.385986 + 0.25);//(0.197754 + 0.19);//(-0.444580078125);
+    private static final Angle kBackLeftEncoderOffset = Rotations.of(-0.142334 + 0.25);//0.273193359375);//(-0.385986 + 0.25);//(0.197754 + 0.19);//(-0.444580078125);
     private static final boolean kBackLeftSteerMotorInverted = true;
     private static final boolean kBackLeftEncoderInverted = false;
 

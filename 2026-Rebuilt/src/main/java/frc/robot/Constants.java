@@ -101,7 +101,7 @@ public class Constants {
         
         public static final CurrentLimitsConfigs INTAKE_PIVOT_CURRENT_LIMITS_CONFIGS =
             new CurrentLimitsConfigs()
-                .withSupplyCurrentLimit(40) //TODO Old was 60
+                .withSupplyCurrentLimit(60) //TODO Old was 60
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimit(80)
                 .withStatorCurrentLimitEnable(true);
@@ -201,7 +201,7 @@ public class Constants {
     public class RobotConstants {
         // Intake Robot Constants
         public static final double INTAKE_PIVOT_STOW = 0.0008; 
-        public static final double INTAKE_PIVOT_EXTEND = 0.24; 
-        public static final double INTAKE_EXTEND_SPEED = -0.5;
+        public static final double INTAKE_PIVOT_EXTEND = 0.245; 
+        public static final double INTAKE_EXTEND_SPEED = -0.4;
     }
 } 
