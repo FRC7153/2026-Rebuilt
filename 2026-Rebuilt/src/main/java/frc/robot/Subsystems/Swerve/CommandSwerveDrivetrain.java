@@ -331,29 +331,32 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     private void addLimelightMeasurement(String cameraName) {
+
         var estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
 
         if (estimate == null) {
-            System.out.println("Limelight estimate is null for camera: " + cameraName);
+            //System.out.println("Limelight estimate is null for camera: " + cameraName);
             return;
         }
 
         if (estimate.tagCount < 1){
-            System.out.println("Limelight estimate has no targets for camera: " + cameraName);
+            //System.out.println("Limelight estimate has no targets for camera: " + cameraName);
             return;
         }
 
         if (estimate.avgTagDist > 5.0) {
-            System.out.println("Limelight estimate is too far for camera: " + cameraName + " with distance: " + estimate.avgTagDist);
+            //System.out.println("Limelight estimate is too far for camera: " + cameraName + " with distance: " + estimate.avgTagDist);
             return; //TODO
         }
 
         if (Math.abs(getState().Speeds.omegaRadiansPerSecond) > 4.0) {
-            System.out.println("Limelight estimate rejected due to high angular velocity of: " + getState().Speeds.omegaRadiansPerSecond);
+            //System.out.println("Limelight estimate rejected due to high angular velocity of: " + getState().Speeds.omegaRadiansPerSecond);
             return; // Reject vision measurement if robot is rotating too fast
         }
 
         Pose2d visionPose = estimate.pose;
+
+        double xyStdDevs = 0.3 * Math.pow(estimate.avgTagDist, 2.0) / estimate.tagCount;
 
         var stdDevs = VecBuilder.fill(
             0.9, // X TODO

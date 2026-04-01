@@ -39,7 +39,6 @@ public class AutoChooser {
 
     private final Alert noAutoLoadedAlert = new Alert("No auto loaded yet (run pregame)", AlertType.kInfo);
 
-    private AutoBuilder autoBuilder = new AutoBuilder(); // For generating path following commands
     public AutoChooser(CommandSwerveDrivetrain drive, Shooter shooter, Intake intake) {
         this.drive = drive;
         this.shooter = shooter;
@@ -90,7 +89,9 @@ public class AutoChooser {
     PathPlannerPath testPath = loadPath("ClimbAuto");
     PathPlannerPath bumpPath = loadPath("BumpAuto");
     PathPlannerPath shootPath = loadPath("ShootAuto");
-    
+    PathPlannerPath leftShootPath = loadPath("LeftShootAuto");
+    PathPlannerPath rightShootPath = loadPath("RightShootAuto");
+
     if(testPath != null){
       chooser.addOption("ClimbAuto",
         Pair.of(getStartPose(testPath), 
@@ -109,6 +110,18 @@ public class AutoChooser {
       chooser.addOption("ShootAuto", 
         Pair.of(getStartPose(shootPath),
         () -> AutoBuilder.buildAuto("ShootAuto")));
+    }
+
+    if (leftShootPath != null) {
+      chooser.addOption("LeftShootAuto", 
+        Pair.of(getStartPose(leftShootPath), 
+          () -> AutoBuilder.buildAuto("LeftShootAuto")));
+    }
+
+    if (rightShootPath != null) {
+      chooser.addOption("RightShootAuto", 
+      Pair.of(getStartPose(rightShootPath), 
+        () -> AutoBuilder.buildAuto("RightShootAuto")));
     }
 
     

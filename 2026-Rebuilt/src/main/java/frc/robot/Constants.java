@@ -101,7 +101,7 @@ public class Constants {
         
         public static final CurrentLimitsConfigs INTAKE_PIVOT_CURRENT_LIMITS_CONFIGS =
             new CurrentLimitsConfigs()
-                .withSupplyCurrentLimit(40) //TODO Old was 60
+                .withSupplyCurrentLimit(60) //TODO Old was 60
                 .withSupplyCurrentLimitEnable(true)
                 .withStatorCurrentLimit(80)
                 .withStatorCurrentLimitEnable(true);
@@ -168,8 +168,7 @@ public class Constants {
             .withSlot0(SHOOTER_GAINS)
             .withCurrentLimits(SHOOTER_CURRENT_LIMITS_CONFIGS)
             .withFeedback(SHOOTER_ENCODER_CONFIGS)
-            .withMotorOutput(SHOOTER_OUTPUT_CONFIGS)
-            .withVoltage(SHOOTER_VOLTAGE_CONFIGS);
+            .withMotorOutput(SHOOTER_OUTPUT_CONFIGS);
         
         public static final FeedForwardConfig KICKER_FF_CONFIGS = new FeedForwardConfig()
             .sva(0.0074999, 0.0002, 0.00001195, ClosedLoopSlot.kSlot0); //TODO
@@ -202,7 +201,7 @@ public class Constants {
     public class RobotConstants {
         // Intake Robot Constants
         public static final double INTAKE_PIVOT_STOW = 0.0008; 
-        public static final double INTAKE_PIVOT_EXTEND = 0.25; 
-        public static final double INTAKE_EXTEND_SPEED = -0.7;
+        public static final double INTAKE_PIVOT_EXTEND = 0.245; 
+        public static final double INTAKE_EXTEND_SPEED = -0.4;
     }
 } 

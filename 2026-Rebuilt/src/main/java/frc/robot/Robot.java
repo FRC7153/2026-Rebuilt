@@ -107,7 +107,6 @@ public final class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     System.out.println("TELEOP mode set");
-
   }
 
   @Override
