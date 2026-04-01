@@ -166,7 +166,7 @@ public class RobotContainer {
 
     baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.5, -0.70));
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.5, -0.80));
 
     baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
     baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
