@@ -16,7 +16,7 @@ import java.util.function.DoubleSupplier;
 
 public class PointToHubCommand extends Command {
 
-    private static final Translation2d HUB_POSITION = new Translation2d(8.23, 4.12); // update to your game year
+    private static final Translation2d HUB_POSITION = new Translation2d(8.23, 4.12); 
 
     private final CommandSwerveDrivetrain drivetrain;
     private final DoubleSupplier xSupplier;
