@@ -27,6 +27,7 @@ import frc.robot.Commands.DeployIntakeCommand;
 import frc.robot.Commands.DistanceShootCommand;
 import frc.robot.Commands.HoldIntakeCommand;
 import frc.robot.Commands.HomeIntakeCommand;
+import frc.robot.Commands.PointToHubCommand;
 import frc.robot.Commands.ShootCommand;
 import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Constants.DashboardConstants;
@@ -172,10 +173,16 @@ public class RobotContainer {
     baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
 
     // Reverse Intake
-    baseController.b().whileTrue(new DeployIntakeCommand(intake, 0.25, 0.8));
+    baseController.b().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1.0));
+
+    // Point to hub command
+    baseController.y().whileTrue(new PointToHubCommand(drivetrain, 
+      () -> -baseController.getLeftY() * MaxSpeed,
+      () -> -baseController.getLeftX() * MaxSpeed,
+      AprilTagConstants.LL_4_FRONT));
 
     //Distance Shoot Command 
-    //baseController.a().and(baseController.rightTrigger()).whileTrue(new DistanceShootCommand(shooter));
+    baseController.a().and(baseController.rightTrigger()).whileTrue(new DistanceShootCommand(shooter));
 
     // Toggle Intake 
     armsController.y().whileTrue(new DeployIntakeCommand(intake, 0.18, 0.0));

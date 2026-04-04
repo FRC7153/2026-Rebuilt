@@ -6,13 +6,14 @@ import static edu.wpi.first.units.Units.Volts;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
@@ -34,16 +35,14 @@ import frc.robot.Util.Dashboard.HardwareFaultTracker;
 public class Intake implements Subsystem{
     private final TalonFX intakePivot = new TalonFX(HardwareConstants.INTAKE_PIVOT_CAN, HardwareConstants.CANIVORE);
     private final SparkFlex intake = new SparkFlex(HardwareConstants.INTAKE_CAN, MotorType.kBrushless);
+    private final SparkFlex intakeFollower = new SparkFlex(HardwareConstants.INTAKE_FOLLOWER_CAN, MotorType.kBrushless);
     private final RelativeEncoder intakeEncoder = intake.getEncoder();
+    private final SparkClosedLoopController intakeController = intake.getClosedLoopController(); 
 
     private final StaticBrake staticBrakeRequest = new StaticBrake();
     
     private final StatusSignal<Angle> pivotPosition = intakePivot.getPosition();
 
-    private final PositionVoltage pivotPositionRequest = new PositionVoltage(0.0)
-        .withOverrideBrakeDurNeutral(true)
-        .withSlot(0);
-    
     private final MotionMagicVoltage pivotMotionMagicRequest = new MotionMagicVoltage(0.0)
         .withOverrideBrakeDurNeutral(true)
         .withSlot(0);
@@ -74,6 +73,7 @@ public class Intake implements Subsystem{
     public Intake() {
         intakePivot.getConfigurator().apply(IntakeConstants.INTAKE_PIVOT_CONFIGS);
         intake.configure(IntakeConstants.INTAKE_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        intakeFollower.configure(IntakeConstants.INTAKE_FOLLOWER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         intakePivot.setControl(pivotMotionMagicRequest.withPosition(0.0));
         
@@ -98,6 +98,15 @@ public class Intake implements Subsystem{
 
         if (BuildConstants.PUBLISH_EVERYTHING) {
             intakeSetpointPub.set(speed);
+        }
+    }
+
+    public void setIntakeVelocity(double velocity) {
+        intakeController.setSetpoint(velocity, ControlType.kVelocity);
+        intakeSetpointLog.append(velocity);
+
+        if (BuildConstants.PUBLISH_EVERYTHING) {
+            intakeSetpointPub.set(velocity);
         }
     }
 
@@ -148,7 +157,6 @@ public class Intake implements Subsystem{
     public void zeroPivotEncoder() {
         intakePivot.setPosition(0.0);
     }
-
 
     public static SysIdRoutine getintakePivotRoutine(Intake intake) {
         System.out.println("Starting Signal due to getIntakePivotRoutine");

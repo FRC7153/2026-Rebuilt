@@ -16,12 +16,9 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.SparkBase.ControlType;
-import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
-import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
@@ -39,7 +36,6 @@ import frc.robot.Constants.BuildConstants;
 import frc.robot.Constants.HardwareConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.Libs.LimelightHelpers;
-import frc.robot.Subsystems.Vision.Limelight;
 import frc.robot.Util.Dashboard.HardwareFaultTracker;
 import frc.robot.Util.Math.ShooterRegression;
 
@@ -50,8 +46,6 @@ public class Shooter implements Subsystem{
     private final SparkFlex liveFloor = new SparkFlex(HardwareConstants.LIVEFLOOR_CAN, MotorType.kBrushless);
     private final RelativeEncoder kickerRelativeEncoder = kicker.getEncoder();
     private final RelativeEncoder liveFloorRelativeEncoder = liveFloor.getEncoder();
-    private final SparkClosedLoopController kickerController = kicker.getClosedLoopController();
-    
     private final StaticBrake staticBrakeRequest = new StaticBrake();
 
     private final StatusSignal<AngularVelocity> shooterVelo = shooter.getVelocity();
@@ -65,14 +59,10 @@ public class Shooter implements Subsystem{
     private final Alert kickerAlert = new Alert("Kicker Alert", AlertType.kError);
     private final Alert liveFloorAlert = new Alert("Live Floor Alert", AlertType.kError);
 
-    private final LimelightHelpers limelight;
-    
     private static SysIdRoutine shooterRoutine, kickerRoutine;
     
     // NT Logging 
     private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub, liveFloorVeloPub, liveFloorSetpointPub;
-
-    private final DoublePublisher LLdistance;
 
     //Datalog
     private final DoubleLogEntry shooterVeloLog = 
@@ -108,10 +98,10 @@ public class Shooter implements Subsystem{
         shooter2.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
         shooter2.setControl(new Follower(HardwareConstants.SHOOTER_CAN, MotorAlignmentValue.Opposed)); 
 
-        limelight = new LimelightHelpers();
+        new LimelightHelpers();
 
         NetworkTable LL = NetworkTableInstance.getDefault().getTable("LLfront");
-        LLdistance = LL.getDoubleTopic("LL distance").publish();
+        LL.getDoubleTopic("LL distance").publish();
 
         if (BuildConstants.PUBLISH_EVERYTHING){
             NetworkTable nt = NetworkTableInstance.getDefault().getTable("Shooter");
@@ -200,7 +190,7 @@ public class Shooter implements Subsystem{
 
         double ty = LimelightHelpers.getTY(AprilTagConstants.LL_4_FRONT);
         double distance = ShooterRegression.getShooterDistance(ty);
-        double targetVel = ShooterRegression.getVelocityMetersPerSec(distance);
+        double targetVel = ShooterRegression.getVelocityRotationsPerSec(distance);
 
         double targetRPS = targetVel;
 

@@ -3,7 +3,7 @@ package frc.robot.Util.Math;
 import frc.robot.Constants.AprilTagConstants;
 
 public class ShooterRegression {
-    // ── SHOT DATA — distance (m) → velocity (m/s) ───────
+    // ── SHOT DATA — distance (m) → velocity (rps) ───────
   // Add more points for better accuracy. Min 3 for quadratic.
   private static final double[] DISTANCES  = {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5};// TODO
   private static final double[] VELOCITIES = {12.1, 14.3, 16.0, 17.4, 18.7, 20.2, 21.8}; //TODO
@@ -15,10 +15,10 @@ public class ShooterRegression {
   private static final double[] COEFFS = polyFit(DISTANCES, VELOCITIES, POLY_DEGREE);
 
   /**
-   * Returns the required shooter surface velocity (m/s) for a given
+   * Returns the required shooter surface velocity (rps) for a given
    * distance to target. Uses pre-fit polynomial regression.
    */
-  public static double getVelocityMetersPerSec(double distanceMeters) {
+  public static double getVelocityRotationsPerSec(double distanceMeters) {
     return polyEval(COEFFS, distanceMeters);
   }
 

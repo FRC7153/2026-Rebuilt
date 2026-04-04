@@ -396,8 +396,4 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     }
 
-    public void checkHardware() {
-
-    }
-
 }

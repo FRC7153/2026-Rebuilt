@@ -64,6 +64,7 @@ public class Constants {
         // Intake Subsystem CAN IDs
         public static final int INTAKE_CAN = 13;
         public static final int INTAKE_PIVOT_CAN = 14;
+        public static final int INTAKE_FOLLOWER_CAN = 22;
 
         //Shooter Subsystem CAN IDs 
         public static final int SHOOTER_CAN = 15;
@@ -79,6 +80,7 @@ public class Constants {
 
         // PDH Can ID
         public static final int PDH_CAN = 21;
+
 
         // CAN Busses
         public final static CANBus CANIVORE = new CANBus("CANivore");
@@ -128,10 +130,23 @@ public class Constants {
             .withMotionMagic(intakePivotMotionMagiv)
             .withSoftwareLimitSwitch(INTAKE_SOFWARE_CONFIGS);
 
+        public static final ClosedLoopConfig INTAKE_PID = new ClosedLoopConfig()
+            .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+            .pid(0.0001, 0.0, 0.0); //TODO
+
+        // Intake Follower Configs 
+        public static final SparkBaseConfig INTAKE_FOLLOWER_CONFIG = new SparkFlexConfig()
+            .idleMode(IdleMode.kCoast)
+            .inverted(false)
+            .smartCurrentLimit(30)
+            .apply(INTAKE_PID)
+            .follow(HardwareConstants.INTAKE_CAN, true);
+
         public static final SparkBaseConfig INTAKE_CONFIG = new SparkFlexConfig()
-            .idleMode(IdleMode.kBrake)
+            .idleMode(IdleMode.kCoast)
             .inverted(false)//TODO
-            .smartCurrentLimit(30);
+            .smartCurrentLimit(30)
+            .apply(INTAKE_PID);
     }
     
     public class ShooterConstants {
@@ -152,10 +167,7 @@ public class Constants {
                 .withSupplyCurrentLowerTime(1)//Seconds
                 .withStatorCurrentLimit(80)
                 .withStatorCurrentLimitEnable(true);
-        
-        private static final VoltageConfigs SHOOTER_VOLTAGE_CONFIGS = new VoltageConfigs()
-            .withPeakForwardVoltage(12.0) // Volts
-            .withPeakReverseVoltage(12.0); // Volts
+
 
         private static final FeedbackConfigs SHOOTER_ENCODER_CONFIGS = new FeedbackConfigs()
             .withSensorToMechanismRatio(SHOOTER_GEAR_RATIO);
@@ -202,6 +214,6 @@ public class Constants {
         // Intake Robot Constants
         public static final double INTAKE_PIVOT_STOW = 0.0008; 
         public static final double INTAKE_PIVOT_EXTEND = 0.245; 
-        public static final double INTAKE_EXTEND_SPEED = -0.4;
+        public static final double INTAKE_EXTEND_SPEED = -4000; //RPM, negative is inwards
     }
 } 

@@ -19,13 +19,13 @@ public class DeployIntakeCommand extends Command {
     @Override
     public void initialize() {
         m_intake.setAndRememberPosition(m_pivotPosition);
-        m_intake.setIntakeSpeed(m_rollerSpeed);
+        m_intake.setIntakeVelocity(m_rollerSpeed);
     }
 
 
     @Override
     public void end(boolean interrupted) {
-        m_intake.setIntakeSpeed(0.0); // always stop rollers
+        m_intake.setIntakeVelocity(0.0); // always stop rollers
     }
 
     @Override
