@@ -192,7 +192,7 @@ public class Constants {
         
         // Kicker Configs Neo vortex  
         public static final SparkBaseConfig KICKER_CONFIG = new SparkFlexConfig()
-                .idleMode(IdleMode.kBrake)
+                .idleMode(IdleMode.kCoast)
                 .inverted(false)
                 .smartCurrentLimit(40)
                 .apply(KICKER_PID);
@@ -212,8 +212,8 @@ public class Constants {
     }
     public class RobotConstants {
         // Intake Robot Constants
-        public static final double INTAKE_PIVOT_STOW = 0.0008; 
-        public static final double INTAKE_PIVOT_EXTEND = 0.245; 
-        public static final double INTAKE_EXTEND_SPEED = -4000; //RPM, negative is inwards
+        public static final double INTAKE_PIVOT_STOW = -0.02; 
+        public static final double INTAKE_PIVOT_EXTEND = -0.199; 
+        public static final double INTAKE_EXTEND_SPEED = -6000; //RPM, negative is inwards
     }
 } 
