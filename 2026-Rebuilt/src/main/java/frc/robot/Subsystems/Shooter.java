@@ -16,7 +16,9 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
@@ -46,6 +48,7 @@ public class Shooter implements Subsystem{
     private final SparkFlex liveFloor = new SparkFlex(HardwareConstants.LIVEFLOOR_CAN, MotorType.kBrushless);
     private final RelativeEncoder kickerRelativeEncoder = kicker.getEncoder();
     private final RelativeEncoder liveFloorRelativeEncoder = liveFloor.getEncoder();
+    private final SparkClosedLoopController kickerController = kicker.getClosedLoopController();
     private final StaticBrake staticBrakeRequest = new StaticBrake();
 
     private final StatusSignal<AngularVelocity> shooterVelo = shooter.getVelocity();
@@ -147,6 +150,20 @@ public class Shooter implements Subsystem{
 
         if (BuildConstants.PUBLISH_EVERYTHING){
             kickerSetPointPub.set(speed);
+        }
+    }
+
+    /**
+     * Sets kicker velocity 0-6789 rpm
+     * @param velo
+     */
+    public void setKickerVelo(double velo){
+        kickerController.setSetpoint(velo, ControlType.kVelocity);
+
+        kickerSetPointLog.append(velo);
+
+        if (BuildConstants.PUBLISH_EVERYTHING) {
+            kickerSetPointPub.set(velo);
         }
     }
 

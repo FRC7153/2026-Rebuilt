@@ -167,6 +167,8 @@ public class AutoChooser {
     public Command getCurrentSelectedCommand(){
         if (currentLoadedCommand == null){
             loadAutoCommand();
+            noAutoLoadedAlert.set(true);
+            return noOpCommand;
         }
         return currentLoadedCommand;
     }

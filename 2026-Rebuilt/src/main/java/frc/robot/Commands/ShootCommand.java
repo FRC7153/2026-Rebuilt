@@ -22,12 +22,12 @@ public class ShootCommand extends RunCommand {
             // Kicker & floor logic
             if (Math.abs(shooter.getShooterVelocity() - shooterVelo) > VELOCITY_TOLERANCE) {
                 // Reverse kicker until shooter ready
-                shooter.setKickerSpeed(-0.4);
+                shooter.setKickerSpeed(-4000);
                 shooter.setliveFloorSpeed(liveFloorSpeed);
             } else {
                 // Shooter ready → feed
                 new WaitCommand(0.01);
-                shooter.setKickerSpeed(kickerSpeed);
+                shooter.setKickerVelo(kickerSpeed * 10000);
                 shooter.setliveFloorSpeed(liveFloorSpeed);
             }
         }, shooter); // Only requires shooter

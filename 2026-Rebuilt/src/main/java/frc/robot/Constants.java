@@ -36,7 +36,7 @@ public class Constants {
             AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);//TODO 
     }
     public class BuildConstants {
-        public static final boolean PUBLISH_EVERYTHING = false;
+        public static final boolean PUBLISH_EVERYTHING = true;
         public static final boolean INCLUDE_TEST_AUTOS = false;
     }
 
@@ -93,12 +93,12 @@ public class Constants {
 
         public static final Slot0Configs INTAKE_PIVOT_GAINS = new Slot0Configs()
             .withKP(80.0).withKI(0.0).withKD(4.0)
-            .withKS(0.25).withKV(2.5).withKA(0.14118)
-            .withKG(0.3).withGravityType(GravityTypeValue.Arm_Cosine); 
+            .withKS(0.3).withKV(2.5).withKA(0.14118)
+            .withKG(2.0).withGravityType(GravityTypeValue.Arm_Cosine); 
         
         public static final MotionMagicConfigs intakePivotMotionMagiv = new MotionMagicConfigs()
-            .withMotionMagicCruiseVelocity(40)
-            .withMotionMagicAcceleration(120)
+            .withMotionMagicCruiseVelocity(60)
+            .withMotionMagicAcceleration(160)
             .withMotionMagicJerk(1000);
         
         public static final CurrentLimitsConfigs INTAKE_PIVOT_CURRENT_LIMITS_CONFIGS =
@@ -187,8 +187,8 @@ public class Constants {
             
         public static final ClosedLoopConfig KICKER_PID = new ClosedLoopConfig()
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(0.0004, 0.0, 0.0025)
-                .apply(KICKER_FF_CONFIGS); 
+                .pid(0.0001, 0.0, 0.0);
+                //.apply(KICKER_FF_CONFIGS); 
         
         // Kicker Configs Neo vortex  
         public static final SparkBaseConfig KICKER_CONFIG = new SparkFlexConfig()

@@ -115,7 +115,6 @@ public class RobotContainer {
       )
     );
 
-
     new EventTrigger("ExtendIntake")
       .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
 
