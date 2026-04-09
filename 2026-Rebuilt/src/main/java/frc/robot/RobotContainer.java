@@ -194,7 +194,7 @@ public class RobotContainer {
     armsController.rightTrigger().whileTrue(new ShootCommand(shooter, -20, -0.4, 0.6));
 
     // Reverse Intake
-    armsController.b().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, 0.8));
+    armsController.b().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1.0));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }
