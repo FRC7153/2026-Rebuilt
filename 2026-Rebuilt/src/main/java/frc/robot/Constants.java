@@ -36,7 +36,7 @@ public class Constants {
             AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);//TODO 
     }
     public class BuildConstants {
-        public static final boolean PUBLISH_EVERYTHING = false;
+        public static final boolean PUBLISH_EVERYTHING = true;
         public static final boolean INCLUDE_TEST_AUTOS = false;
     }
 
@@ -212,8 +212,8 @@ public class Constants {
     }
     public class RobotConstants {
         // Intake Robot Constants
-        public static final double INTAKE_PIVOT_STOW = 0.0008; 
-        public static final double INTAKE_PIVOT_EXTEND = 0.245; 
+        public static final double INTAKE_PIVOT_STOW = -0.02; 
+        public static final double INTAKE_PIVOT_EXTEND = -0.199; 
         public static final double INTAKE_EXTEND_SPEED = -4000; //RPM, negative is inwards
     }
 } 
