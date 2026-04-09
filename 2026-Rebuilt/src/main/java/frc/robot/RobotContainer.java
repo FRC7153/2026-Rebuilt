@@ -104,7 +104,7 @@ public class RobotContainer {
 
     NamedCommands.registerCommand(
       "RetractIntakeSpin", 
-      new DeployIntakeCommand(intake, 0.0008, -0.5).withTimeout(3.0)
+      new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, -0.5).withTimeout(3.0)
     );
 
     NamedCommands.registerCommand("BumpAuto", 
@@ -188,7 +188,7 @@ public class RobotContainer {
 
     armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
     armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
-    armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, -0.4));
+    armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, RobotConstants.INTAKE_EXTEND_SPEED * -1.0));
 
     armsController.rightTrigger().whileTrue(new ShootCommand(shooter, -20, -0.4, 0.6));
 
