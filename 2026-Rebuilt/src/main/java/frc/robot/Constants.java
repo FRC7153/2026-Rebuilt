@@ -28,7 +28,7 @@ public class Constants {
         public static final String LL_4_FRONT = "limelight-front";
         public static final String LL_3_BACK = "limelight-back";
 
-        public static final double FRONT_CAMERA_HEIGHT = 0.55; //TODO Meters
+        public static final double FRONT_CAMERA_HEIGHT = 0.73025; //TODO Meters
         public static final double TARGET_HEIGHT = 1.12; //TODO Meters
         public static final double CAMERA_ANGLE_DEG = 0.0; //TODO Degrees
 
@@ -144,7 +144,7 @@ public class Constants {
 
         public static final SparkBaseConfig INTAKE_CONFIG = new SparkFlexConfig()
             .idleMode(IdleMode.kCoast)
-            .inverted(false)//TODO
+            .inverted(false)
             .smartCurrentLimit(30)
             .apply(INTAKE_PID);
     }
@@ -205,7 +205,7 @@ public class Constants {
                 .velocityConversionFactor(1.0 / LIVEFLOOR_GEAR_RATIO);
                 
         public static final SparkBaseConfig LIVEFLOOR_CONFIG = new SparkFlexConfig()
-                .idleMode(IdleMode.kBrake)
+                .idleMode(IdleMode.kCoast)
                 .inverted(false)
                 .smartCurrentLimit(30)
                 .apply(LIVEFLOOR_PID);

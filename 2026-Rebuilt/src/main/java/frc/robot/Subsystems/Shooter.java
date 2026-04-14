@@ -65,7 +65,7 @@ public class Shooter implements Subsystem{
     private static SysIdRoutine shooterRoutine, kickerRoutine;
     
     // NT Logging 
-    private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub, liveFloorVeloPub, liveFloorSetpointPub;
+    private final DoublePublisher kickerVeloPub, shooterVeloPub, shooterSetpointPub, kickerSetPointPub, liveFloorVeloPub, liveFloorSetpointPub, distancePub;
 
     //Datalog
     private final DoubleLogEntry shooterVeloLog = 
@@ -91,8 +91,8 @@ public class Shooter implements Subsystem{
 
     private final DoubleLogEntry kickerPositionLog =
         new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Position", "Rotations");
-    
 
+    private Double lastKnownDistance = null;
 
     public Shooter() {
         shooter.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
@@ -114,6 +114,8 @@ public class Shooter implements Subsystem{
             kickerSetPointPub = nt.getDoubleTopic("kickerSetpoint").publish();
             shooterSetpointPub = nt.getDoubleTopic("shooterSetpoint").publish();
             liveFloorSetpointPub = nt.getDoubleTopic("liveFloorSetpoint").publish();
+            distancePub = nt.getDoubleTopic("shooterDistance").publish();
+
         } else {
             kickerVeloPub = null;
             shooterVeloPub = null;
@@ -121,6 +123,7 @@ public class Shooter implements Subsystem{
             kickerSetPointPub = null;
             shooterSetpointPub = null;
             liveFloorSetpointPub = null;
+            distancePub = null;
         }
     }
 
@@ -200,20 +203,23 @@ public class Shooter implements Subsystem{
     }
 
     public boolean setVelocityFromLimelight() {
-        if (LimelightHelpers.getTargetCount(AprilTagConstants.LL_4_FRONT) < 1) {
-        shooter.stopMotor();
-        return false;
+        if (LimelightHelpers.getTargetCount(AprilTagConstants.LL_4_FRONT) >= 1) {
+            double ty = LimelightHelpers.getTY(AprilTagConstants.LL_4_FRONT);
+            lastKnownDistance = ShooterRegression.getShooterDistance(ty);
         }
 
-        double ty = LimelightHelpers.getTY(AprilTagConstants.LL_4_FRONT);
-        double distance = ShooterRegression.getShooterDistance(ty);
-        double targetVel = ShooterRegression.getVelocityRotationsPerSec(distance);
+        if (lastKnownDistance == null) {
+            shooter.stopMotor();
+            return false;
+        }
 
-        double targetRPS = targetVel;
+        if (lastKnownDistance != null) {
+            distancePub.set(lastKnownDistance);
+        }
 
+        double targetRPS = ShooterRegression.getVelocityRotationsPerSec(lastKnownDistance);
         shooter.setControl(shooterVeloRequest.withVelocity(targetRPS));
 
-        // Ready when within ±10 RPS of target
         double currentRPS = shooter.getVelocity().getValueAsDouble();
         return Math.abs(currentRPS - targetRPS) < 10.0;
     }

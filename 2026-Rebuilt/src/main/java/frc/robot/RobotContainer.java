@@ -120,8 +120,15 @@ public class RobotContainer {
 
     new EventTrigger("RetractIntake")
       .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
-    configureBindings(); 
 
+    new EventTrigger("StationaryShoot")
+      .onTrue(new ShootCommand(shooter, 24.25, 0.5, -0.7));
+
+    new EventTrigger("StopShooter")
+      .onTrue(new ShootCommand(shooter, 0.0, 0.0, 0.0));
+
+    configureBindings();
+    
     auto = new AutoChooser(drivetrain, shooter, intake);
   }
 

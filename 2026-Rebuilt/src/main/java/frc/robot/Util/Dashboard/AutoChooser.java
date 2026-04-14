@@ -91,6 +91,13 @@ public class AutoChooser {
     PathPlannerPath shootPath = loadPath("ShootAuto");
     PathPlannerPath leftShootPath = loadPath("LeftShootAuto");
     PathPlannerPath rightShootPath = loadPath("RightShootAuto");
+    PathPlannerPath testAuto = loadPath("TestAuto");
+
+    if (testAuto != null) {
+      chooser.addOption("TestAuto", 
+        Pair.of(getStartPose(testAuto), 
+          () -> AutoBuilder.buildAuto("TestAuto")));
+    }
 
     if(testPath != null){
       chooser.addOption("ClimbAuto",

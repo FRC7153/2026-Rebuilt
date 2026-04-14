@@ -35,7 +35,7 @@ public class PointToHubCommand extends Command {
     private final ProfiledPIDController rotationController = new ProfiledPIDController(
         5.0,
         0.0,
-        0.2,
+        1.5,
         new TrapezoidProfile.Constraints(
             Units.degreesToRadians(540),
             Units.degreesToRadians(720)
