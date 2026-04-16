@@ -115,14 +115,25 @@ public class RobotContainer {
       )
     );
 
+    Trigger isDuringAuto = new Trigger(RobotModeTriggers.autonomous());
+
     new EventTrigger("ExtendIntake")
+    .and(isDuringAuto)
       .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
 
     new EventTrigger("RetractIntake")
+      .and(isDuringAuto)
       .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
 
     new EventTrigger("StationaryShoot")
-      .onTrue(new ShootCommand(shooter, 24.25, 0.5, -0.7));
+      .and(isDuringAuto)
+      .onTrue(new ParallelCommandGroup(
+        new ShootCommand(shooter, 24.25, 0.5, -0.7),
+        new SequentialCommandGroup(new WaitCommand(4.0), 
+          new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1)
+        )
+      ));
+      //.onTrue(new ShootCommand(shooter, 24.25, 0.5, -0.7));
 
     new EventTrigger("StopShooter")
       .onTrue(new ShootCommand(shooter, 0.0, 0.0, 0.0));
@@ -130,7 +141,7 @@ public class RobotContainer {
     configureBindings();
     
     auto = new AutoChooser(drivetrain, shooter, intake);
-  }
+  } 
 
   private void configureBindings() {
     //Triggers 
@@ -151,6 +162,8 @@ public class RobotContainer {
     intake.setDefaultCommand(new HoldIntakeCommand(intake));
 
     shooter.setDefaultCommand(new ShootCommand(shooter, 0.0, 0.0, 0.0));
+    //shooter.setDefaultCommand(new InstantCommand(shooter::idle, shooter).repeatedly());
+
 
     baseController.y().whileTrue(drivetrain.applyRequest(() -> brake));
     //baseController.b().whileTrue(drivetrain.applyRequest(() ->
@@ -171,9 +184,16 @@ public class RobotContainer {
     isTeleopTrigger
       .onTrue(new InstantCommand(() -> Elastic.selectTab(DashboardConstants.ELASTIC_SERVER_PORT)).ignoringDisable(true));
 
-    baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+    //baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.5, -0.80));
+    //Resverse Intake Up
+    baseController.leftBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1));
+
+    //Reset Gyro 
+    baseController.povUp().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+    // Passing Button
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 33.0, 0.5, -0.80));
 
     baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
     baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
@@ -197,7 +217,11 @@ public class RobotContainer {
     armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
     armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, RobotConstants.INTAKE_EXTEND_SPEED * -1.0));
 
-    armsController.rightTrigger().whileTrue(new ShootCommand(shooter, -20, -0.4, 0.6));
+    // Shoot Button
+    armsController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.5, -0.6));
+
+    // Distance Shoot
+    armsController.a().and(baseController.rightTrigger()).whileTrue(new DistanceShootCommand(shooter));
 
     // Reverse Intake
     armsController.b().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1.0));

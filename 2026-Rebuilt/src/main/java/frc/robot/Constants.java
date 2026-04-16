@@ -30,13 +30,13 @@ public class Constants {
 
         public static final double FRONT_CAMERA_HEIGHT = 0.73025; //TODO Meters
         public static final double TARGET_HEIGHT = 1.12; //TODO Meters
-        public static final double CAMERA_ANGLE_DEG = 0.0; //TODO Degrees
+        public static final double CAMERA_ANGLE_DEG = 10.0; //TODO Degrees
 
         public static final AprilTagFieldLayout FIELD =
             AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);//TODO 
     }
     public class BuildConstants {
-        public static final boolean PUBLISH_EVERYTHING = true;
+        public static final boolean PUBLISH_EVERYTHING = false;
         public static final boolean INCLUDE_TEST_AUTOS = false;
     }
 
@@ -80,7 +80,6 @@ public class Constants {
 
         // PDH Can ID
         public static final int PDH_CAN = 21;
-
 
         // CAN Busses
         public final static CANBus CANIVORE = new CANBus("CANivore");
@@ -174,7 +173,7 @@ public class Constants {
 
         private static final MotorOutputConfigs SHOOTER_OUTPUT_CONFIGS = new MotorOutputConfigs()
             .withInverted(InvertedValue.Clockwise_Positive) //TODO
-            .withNeutralMode(NeutralModeValue.Brake);
+            .withNeutralMode(NeutralModeValue.Coast);
 
         public static final TalonFXConfiguration SHOOTER_CONFIG = new TalonFXConfiguration()
             .withSlot0(SHOOTER_GAINS)

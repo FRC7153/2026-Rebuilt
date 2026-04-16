@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
 import com.pathplanner.lib.util.FlippingUtil;
 
 import edu.wpi.first.math.Pair;
@@ -86,26 +87,17 @@ public class AutoChooser {
     */
 
 
-    PathPlannerPath testPath = loadPath("ClimbAuto");
     PathPlannerPath bumpPath = loadPath("BumpAuto");
     PathPlannerPath shootPath = loadPath("ShootAuto");
-    PathPlannerPath leftShootPath = loadPath("LeftShootAuto");
-    PathPlannerPath rightShootPath = loadPath("RightShootAuto");
     PathPlannerPath testAuto = loadPath("TestAuto");
+    PathPlannerPath rightBumpAuto = loadPath("RightBumpAuto");
+    PathPlannerPath leftBumpAuto = loadPath("LeftBumpAuto");
 
     if (testAuto != null) {
       chooser.addOption("TestAuto", 
         Pair.of(getStartPose(testAuto), 
           () -> AutoBuilder.buildAuto("TestAuto")));
     }
-
-    if(testPath != null){
-      chooser.addOption("ClimbAuto",
-        Pair.of(getStartPose(testPath), 
-          () -> AutoBuilder.buildAuto("ClimbAuto")
-        )
-      ); 
-    } 
 
     if(bumpPath != null) {
       chooser.addOption("BumpAuto", 
@@ -118,19 +110,18 @@ public class AutoChooser {
         Pair.of(getStartPose(shootPath),
         () -> AutoBuilder.buildAuto("ShootAuto")));
     }
-
-    if (leftShootPath != null) {
-      chooser.addOption("LeftShootAuto", 
-        Pair.of(getStartPose(leftShootPath), 
-          () -> AutoBuilder.buildAuto("LeftShootAuto")));
+    
+    if (rightBumpAuto != null) {
+      chooser.addOption("RightBumpAuto", 
+      Pair.of(getStartPose(rightBumpAuto),
+       () -> AutoBuilder.buildAuto("RightBumpAuto")));
     }
 
-    if (rightShootPath != null) {
-      chooser.addOption("RightShootAuto", 
-      Pair.of(getStartPose(rightShootPath), 
-        () -> AutoBuilder.buildAuto("RightShootAuto")));
+    if (leftBumpAuto != null) {
+      chooser.addOption("LeftBumpAuto", 
+      Pair.of(getStartPose(leftBumpAuto), 
+        () -> AutoBuilder.buildAuto("LeftBumpAuto")));
     }
-
     
     // Add the chooser to the dashboard
     SmartDashboard.putData("Auto", chooser);

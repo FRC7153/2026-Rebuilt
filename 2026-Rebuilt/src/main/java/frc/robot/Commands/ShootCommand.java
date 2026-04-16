@@ -6,7 +6,7 @@ import frc.robot.Subsystems.Shooter;
     /**
      * Creates a command to set the shooter, kicker, and live floor speeds. This command is intended to be used as a default command for the shooter subsystem, so that the shooter can be set to a desired speed whenever it is not being used for other commands.
      * @param shooter
-     * @param shooterVelo 0.0 - 100.0 
+     * @param shooterVelo 0.0 - 100.0 rps
      * @param kickerSpeed 0-100%
      * @param liveFloorSpeed 0 - 100%
      */

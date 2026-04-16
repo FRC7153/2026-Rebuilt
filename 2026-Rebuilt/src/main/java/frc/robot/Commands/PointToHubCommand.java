@@ -141,8 +141,10 @@ public class PointToHubCommand extends Command {
         var alliance = DriverStation.getAlliance();
         if (alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red) {
             return RED_HUB_TAGS;
+        } else {
+            
+            return BLUE_HUB_TAGS;
         }
-        return BLUE_HUB_TAGS;
     }
 
     @Override

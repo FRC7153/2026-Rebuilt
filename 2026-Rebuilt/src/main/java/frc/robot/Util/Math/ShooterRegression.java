@@ -5,8 +5,8 @@ import frc.robot.Constants.AprilTagConstants;
 public class ShooterRegression {
     // ── SHOT DATA — distance (m) → velocity (rps) ───────
   // Add more points for better accuracy. Min 3 for quadratic.
-  private static final double[] DISTANCES  = {1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5};// TODO
-  private static final double[] VELOCITIES = {12.1, 14.3, 16.0, 17.4, 18.7, 20.2, 21.8}; //TODO
+  private static final double[] DISTANCES  = {0.59, 0.649, 0.75, 0.849};// TODO
+  private static final double[] VELOCITIES = {28, 27.0, 28.0, 33.0}; //TODO[]\
 
   // Polynomial degree: 1=linear, 2=quadratic (recommended), 3=cubic
   private static final int POLY_DEGREE = 2;
@@ -80,7 +80,7 @@ public class ShooterRegression {
      * @return
      */
     public static double getShooterDistance(double tyDegrees) {
-        double angleRad = Math.toRadians(AprilTagConstants.CAMERA_ANGLE_DEG + tyDegrees);        
-        return (AprilTagConstants.TARGET_HEIGHT - AprilTagConstants.CAMERA_ANGLE_DEG) / Math.tan(angleRad);
+      double angleRad = Math.toRadians(AprilTagConstants.CAMERA_ANGLE_DEG + tyDegrees);        
+      return Math.abs((AprilTagConstants.TARGET_HEIGHT - AprilTagConstants.FRONT_CAMERA_HEIGHT) / Math.tan(angleRad));
     }
 }

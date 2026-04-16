@@ -84,6 +84,9 @@ public final class Robot extends TimedRobot {
   public void autonomousInit() {
     System.out.println("AUTONOMOUS mode set");
     
+    // Load Auto 
+    m_robotContainer.pregameLoad(); // always reload on auto init
+
     // Run auto command
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
@@ -99,13 +102,14 @@ public final class Robot extends TimedRobot {
   public void autonomousExit() {
     // Cancel auto
     if (m_autonomousCommand != null) {
-      CommandScheduler.getInstance().cancelAll();
+      CommandScheduler.getInstance().cancel();
       m_autonomousCommand = null;
     }
   }
 
   @Override
   public void teleopInit() {
+    CommandScheduler.getInstance().cancel();
     System.out.println("TELEOP mode set");
     autoLoaded = false;
   }

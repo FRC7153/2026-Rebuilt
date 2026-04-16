@@ -9,6 +9,7 @@ import org.littletonrobotics.urcl.URCL;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -22,6 +23,7 @@ import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.networktables.DoubleEntry;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -91,6 +93,8 @@ public class Shooter implements Subsystem{
 
     private final DoubleLogEntry kickerPositionLog =
         new DoubleLogEntry(DataLogManager.getLog(), "Kicker/Position", "Rotations");
+        
+    private DoubleEntry shooterSetpointEntry; 
 
     private Double lastKnownDistance = null;
 
@@ -257,6 +261,12 @@ public class Shooter implements Subsystem{
                 null, shooter));
         }
         return kickerRoutine;
+    }
+
+    public void idleMotors() {
+        shooter.setControl(new NeutralOut()); 
+        kicker.disable();
+        liveFloor.disable();
     }
 
     public void log() {
