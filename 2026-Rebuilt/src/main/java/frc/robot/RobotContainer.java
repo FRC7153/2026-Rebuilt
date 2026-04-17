@@ -13,7 +13,9 @@ import com.pathplanner.lib.path.EventMarker;
 
 import static edu.wpi.first.units.Units.*;
 
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -128,9 +130,9 @@ public class RobotContainer {
     new EventTrigger("StationaryShoot")
       .and(isDuringAuto)
       .onTrue(new ParallelCommandGroup(
-        new ShootCommand(shooter, 24.25, 0.5, -0.7),
+        new ShootCommand(shooter, 24.25, 0.5, -0.7).withTimeout(8.0),
         new SequentialCommandGroup(new WaitCommand(4.0), 
-          new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1)
+          new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1).withTimeout(8.0)
         )
       ));
       //.onTrue(new ShootCommand(shooter, 24.25, 0.5, -0.7));
@@ -170,12 +172,14 @@ public class RobotContainer {
     //    point.withModuleDirection(new Rotation2d(-baseController.getLeftY(), -baseController.getLeftX()))
     //));
 
-    // Idle while the robot is disabled. This ensures the configured
+    // Idle while the robot is disabled. This ensures the configured //FIXME
     // neutral mode is applied to the drive motors while disabled.
-    final var idle = new SwerveRequest.Idle();
+    //Mark: do this 
+    /*final var idle = new SwerveRequest.Idle();
     RobotModeTriggers.disabled().whileTrue(
         drivetrain.applyRequest(() -> idle).ignoringDisable(true)
     );
+      */
 
     isEnabledTrigger
       .onTrue(dashboard.getRestartTimerCommand())
@@ -215,7 +219,7 @@ public class RobotContainer {
 
     armsController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
     armsController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
-    armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, RobotConstants.INTAKE_EXTEND_SPEED * -1.0));
+    armsController.leftBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, RobotConstants.INTAKE_EXTEND_SPEED * 1.0));
 
     // Shoot Button
     armsController.rightTrigger().whileTrue(new ShootCommand(shooter, 24.25, 0.5, -0.6));
@@ -250,7 +254,9 @@ public class RobotContainer {
   }
 
   public void pregameLoad() {
+    System.out.println("Pregame Command Starting: " + Timer.getFPGATimestamp());
     auto.loadAutoCommand();
+    System.out.println("Pregame Command Ended: " + Timer.getFPGATimestamp());
   } 
 
   public Command getHomeIntakeCommand() {

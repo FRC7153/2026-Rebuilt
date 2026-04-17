@@ -10,6 +10,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.WPILibVersion;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -71,10 +72,10 @@ public final class Robot extends TimedRobot {
 
   @Override
   public void disabledPeriodic() {
-    if (!autoLoaded) {
+    /*if (!autoLoaded && !DriverStation.isFMSAttached()) {
       m_robotContainer.pregameLoad();
       autoLoaded = true;
-    }
+    }*/
   }
 
   @Override
@@ -86,6 +87,7 @@ public final class Robot extends TimedRobot {
     
     // Load Auto 
     m_robotContainer.pregameLoad(); // always reload on auto init
+    autoLoaded = true;
 
     // Run auto command
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
@@ -100,16 +102,21 @@ public final class Robot extends TimedRobot {
 
   @Override
   public void autonomousExit() {
-    // Cancel auto
+    System.out.println("autonomousExit start: " + Timer.getFPGATimestamp());
+
     if (m_autonomousCommand != null) {
-      CommandScheduler.getInstance().cancel();
-      m_autonomousCommand = null;
+        m_autonomousCommand.cancel();
+        m_autonomousCommand = null;
     }
+    
+    System.out.println("autonomousExit end: " + Timer.getFPGATimestamp());
   }
 
   @Override
   public void teleopInit() {
-    CommandScheduler.getInstance().cancel();
+    System.out.println("teleopInit start: " + Timer.getFPGATimestamp());
+    CommandScheduler.getInstance().cancelAll();
+    System.out.println("teleopInit end: " + Timer.getFPGATimestamp());
     System.out.println("TELEOP mode set");
     autoLoaded = false;
   }
