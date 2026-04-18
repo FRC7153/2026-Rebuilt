@@ -100,8 +100,8 @@ public class Shooter implements Subsystem{
 
     public Shooter() {
         shooter.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
-        kicker.configure(ShooterConstants.KICKER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        liveFloor.configure(ShooterConstants.LIVEFLOOR_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        kicker.configure(ShooterConstants.KICKER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        liveFloor.configure(ShooterConstants.LIVEFLOOR_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
         shooter2.getConfigurator().apply(ShooterConstants.SHOOTER_CONFIG);
         shooter2.setControl(new Follower(HardwareConstants.SHOOTER_CAN, MotorAlignmentValue.Opposed)); 
 

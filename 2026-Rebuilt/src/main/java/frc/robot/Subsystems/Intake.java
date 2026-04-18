@@ -72,8 +72,8 @@ public class Intake implements Subsystem{
 
     public Intake() {
         intakePivot.getConfigurator().apply(IntakeConstants.INTAKE_PIVOT_CONFIGS);
-        intake.configure(IntakeConstants.INTAKE_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-        intakeFollower.configure(IntakeConstants.INTAKE_FOLLOWER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        intake.configure(IntakeConstants.INTAKE_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        intakeFollower.configure(IntakeConstants.INTAKE_FOLLOWER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
         intakePivot.setControl(pivotMotionMagicRequest.withPosition(0.0));
         
