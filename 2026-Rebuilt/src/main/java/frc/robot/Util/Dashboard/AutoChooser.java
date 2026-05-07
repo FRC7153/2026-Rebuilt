@@ -75,6 +75,7 @@ public class AutoChooser {
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), false, true)));
     chooser.addOption("SYSID Kicker D-",
       Pair.of(null, () -> new SysIdCharacterizationCommand(Shooter.getKickerRoutine(shooter), false, false)));
+    
 
     chooser.addOption("SYSID Intake Pivot Q+",
       Pair.of(null, () -> new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), true, true)));

@@ -211,8 +211,8 @@ public class Constants {
     }
     public class RobotConstants {
         // Intake Robot Constants
-        public static final double INTAKE_PIVOT_STOW = -0.02; 
-        public static final double INTAKE_PIVOT_EXTEND = -0.199; 
+        public static final double INTAKE_PIVOT_STOW = -0.013; 
+        public static final double INTAKE_PIVOT_EXTEND = -0.96; 
         public static final double INTAKE_EXTEND_SPEED = -6000; //RPM, negative is inwards
     }
 } 

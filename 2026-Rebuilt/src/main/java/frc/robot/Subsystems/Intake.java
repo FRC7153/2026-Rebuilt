@@ -164,8 +164,8 @@ public class Intake implements Subsystem{
 
         if(intakePivotRoutine == null) {
             intakePivotRoutine = new SysIdRoutine(
-                new SysIdRoutine.Config(Volts.of(0.2).per(Second),
-                Volts.of(2
+                new SysIdRoutine.Config(Volts.of(0.4).per(Second),
+                Volts.of(4
                 ), null, state -> SignalLogger.writeString("SysID_IntakePivot", state.toString())
                 ), new SysIdRoutine.Mechanism((Voltage v) -> {
                     intake.setIntakePivotVoltage(v.in(Volts));

@@ -13,6 +13,8 @@ import com.pathplanner.lib.path.EventMarker;
 
 import static edu.wpi.first.units.Units.*;
 
+import javax.net.ssl.TrustManagerFactorySpi;
+
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -31,6 +33,7 @@ import frc.robot.Commands.HoldIntakeCommand;
 import frc.robot.Commands.HomeIntakeCommand;
 import frc.robot.Commands.PointToHubCommand;
 import frc.robot.Commands.ShootCommand;
+import frc.robot.Commands.SysID.SysIdCharacterizationCommand;
 import frc.robot.Constants.AprilTagConstants;
 import frc.robot.Constants.DashboardConstants;
 import frc.robot.Constants.RobotConstants;
@@ -167,7 +170,7 @@ public class RobotContainer {
     //shooter.setDefaultCommand(new InstantCommand(shooter::idle, shooter).repeatedly());
 
 
-    baseController.y().whileTrue(drivetrain.applyRequest(() -> brake));
+   // baseController.y().whileTrue(drivetrain.applyRequest(() -> brake));
     //baseController.b().whileTrue(drivetrain.applyRequest(() ->
     //    point.withModuleDirection(new Rotation2d(-baseController.getLeftY(), -baseController.getLeftX()))
     //));
@@ -206,13 +209,13 @@ public class RobotContainer {
     baseController.b().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1.0));
 
     // Point to hub command
-    baseController.y().whileTrue(new PointToHubCommand(drivetrain, 
-      () -> -baseController.getLeftY() * MaxSpeed,
-      () -> -baseController.getLeftX() * MaxSpeed,
-      AprilTagConstants.LL_4_FRONT));
+    // baseController.y().whileTrue(new PointToHubCommand(drivetrain, 
+      // () -> -baseController.getLeftY() * MaxSpeed,
+     // () -> -baseController.getLeftX() * MaxSpeed,
+      // AprilTagConstants.LL_4_FRONT));
 
     //Distance Shoot Command 
-    baseController.a().and(baseController.rightTrigger()).whileTrue(new DistanceShootCommand(shooter));
+  //  baseController.a().and(baseController.rightTrigger()).whileTrue(new DistanceShootCommand(shooter));
 
     // Toggle Intake 
     armsController.y().whileTrue(new DeployIntakeCommand(intake, 0.18, 0.0));
@@ -229,7 +232,27 @@ public class RobotContainer {
 
     // Reverse Intake
     armsController.b().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1.0));
-
+    
+    baseController.x().whileTrue(
+      new SequentialCommandGroup(
+        new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), false, false)
+      )
+    );
+    baseController.y().whileTrue(
+      new SequentialCommandGroup(
+        new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), false, true)
+      )
+    );
+    baseController.b().whileTrue(
+      new SequentialCommandGroup(
+        new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), true, false)
+      )
+    );
+    baseController.a().whileTrue(
+      new SequentialCommandGroup(
+        new SysIdCharacterizationCommand(Intake.getintakePivotRoutine(intake), true, true)
+      )
+    );
     drivetrain.registerTelemetry(logger::telemeterize);
   }
 
