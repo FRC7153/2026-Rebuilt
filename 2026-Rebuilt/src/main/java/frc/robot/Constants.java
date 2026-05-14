@@ -84,6 +84,10 @@ public class Constants {
         // CAN Busses
         public final static CANBus CANIVORE = new CANBus("CANivore");
         public final static CANBus RIO_CAN = new CANBus("rio");
+
+        // Limit Switch IDs
+        public static final int INTAKE_BOTTOM_LIMIT_DIO = 0;
+        public static final int INTAKE_TOP_LIMIT_DIO = 1;
     }
 
     public class IntakeConstants {

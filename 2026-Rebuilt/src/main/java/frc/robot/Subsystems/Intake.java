@@ -31,22 +31,43 @@ import frc.robot.Constants.BuildConstants;
 import frc.robot.Constants.HardwareConstants;
 import frc.robot.Constants.IntakeConstants;
 import frc.robot.Util.Dashboard.HardwareFaultTracker;
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class Intake implements Subsystem{
+public class Intake implements Subsystem {
     private final TalonFX intakePivot = new TalonFX(HardwareConstants.INTAKE_PIVOT_CAN, HardwareConstants.CANIVORE);
     private final SparkFlex intake = new SparkFlex(HardwareConstants.INTAKE_CAN, MotorType.kBrushless);
     private final SparkFlex intakeFollower = new SparkFlex(HardwareConstants.INTAKE_FOLLOWER_CAN, MotorType.kBrushless);
     private final RelativeEncoder intakeEncoder = intake.getEncoder();
-    private final SparkClosedLoopController intakeController = intake.getClosedLoopController(); 
+    private final SparkClosedLoopController intakeController = intake.getClosedLoopController();
+    // Limit switches
+    private final DigitalInput bottomLimit = new DigitalInput(HardwareConstants.INTAKE_BOTTOM_LIMIT_DIO);
+
+    private final DigitalInput topLimit = new DigitalInput(HardwareConstants.INTAKE_TOP_LIMIT_DIO);
+
+    private boolean bottomHit() {
+        return !bottomLimit.get(); // NC wiring assumed
+    }
+
+    private boolean topHit() {
+        return !topLimit.get();
+    }
+    private boolean bottomPressed() {
+        return !bottomLimit.get();
+    }
+
+    private boolean topPressed() {
+        return !topLimit.get();
+    }
 
     private final StaticBrake staticBrakeRequest = new StaticBrake();
-    
+
     private final StatusSignal<Angle> pivotPosition = intakePivot.getPosition();
 
     private final MotionMagicVoltage pivotMotionMagicRequest = new MotionMagicVoltage(0.0)
-        .withOverrideBrakeDurNeutral(true)
-        .withSlot(0);
-    
+            .withOverrideBrakeDurNeutral(true)
+            .withSlot(0);
+
     private final Alert intakeAlert = new Alert("Intake Alert", Alert.AlertType.kError);
     private final Alert intakePivotAlert = new Alert("Intake Pivot Alert", Alert.AlertType.kError);
 
@@ -54,29 +75,30 @@ public class Intake implements Subsystem{
 
     private double m_lastPosition = 0.0;
 
-    //NT Logging 
+    // NT Logging
     private final DoublePublisher intakeVeloPub, intakeSetpointPub, intakePivotSetpointPub, intakePivotPositionPub;
 
-    //Datalog
-    private final DoubleLogEntry intakeVeloLog = 
-        new DoubleLogEntry(DataLogManager.getLog(), "Intake/Velo", "RPM");
-        
-    private final DoubleLogEntry intakeSetpointLog = 
-        new DoubleLogEntry(DataLogManager.getLog(), "Intake/Setpoint", "RPM");
-        
-    private final DoubleLogEntry intakePivotSetpointLog = 
-        new DoubleLogEntry(DataLogManager.getLog(), "Intake/Pivot Setpoint", "rots");
-        
-    private final DoubleLogEntry intakePivotPositionLog = 
-        new DoubleLogEntry(DataLogManager.getLog(), "Intake/Pivot Position", "rots");
+    // Datalog
+    private final DoubleLogEntry intakeVeloLog = new DoubleLogEntry(DataLogManager.getLog(), "Intake/Velo", "RPM");
+
+    private final DoubleLogEntry intakeSetpointLog = new DoubleLogEntry(DataLogManager.getLog(), "Intake/Setpoint",
+            "RPM");
+
+    private final DoubleLogEntry intakePivotSetpointLog = new DoubleLogEntry(DataLogManager.getLog(),
+            "Intake/Pivot Setpoint", "rots");
+
+    private final DoubleLogEntry intakePivotPositionLog = new DoubleLogEntry(DataLogManager.getLog(),
+            "Intake/Pivot Position", "rots");
 
     public Intake() {
         intakePivot.getConfigurator().apply(IntakeConstants.INTAKE_PIVOT_CONFIGS);
-        intake.configure(IntakeConstants.INTAKE_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
-        intakeFollower.configure(IntakeConstants.INTAKE_FOLLOWER_CONFIG, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+        intake.configure(IntakeConstants.INTAKE_CONFIG, ResetMode.kResetSafeParameters,
+                PersistMode.kNoPersistParameters);
+        intakeFollower.configure(IntakeConstants.INTAKE_FOLLOWER_CONFIG, ResetMode.kResetSafeParameters,
+                PersistMode.kNoPersistParameters);
 
         intakePivot.setControl(pivotMotionMagicRequest.withPosition(0.0));
-        
+
         if (BuildConstants.PUBLISH_EVERYTHING) {
             NetworkTable nt = NetworkTableInstance.getDefault().getTable("Shooter");
             intakeVeloPub = nt.getDoubleTopic("IntakVelo").publish();
@@ -111,7 +133,22 @@ public class Intake implements Subsystem{
     }
 
     public void setIntakePivotPosition(double position) {
+
         position = MathUtil.clamp(position, 0, 2.6);
+
+        double current = getIntakePivotPosition();
+
+        // Block downward motion if bottom limit is hit
+        if (bottomHit() && position < current) {
+            stopIntakePivot();
+            return;
+        }
+
+        // Block upward motion if top limit is hit
+        if (topHit() && position > current) {
+            stopIntakePivot();
+            return;
+        }
 
         intakePivot.setControl(pivotMotionMagicRequest.withPosition(position));
         intakePivotSetpointLog.append(position);
@@ -144,7 +181,7 @@ public class Intake implements Subsystem{
 
     public double getIntakePivotPosition() {
         return pivotPosition.getValueAsDouble();
-    } 
+    }
 
     public double getIntakeVeloctiy() {
         return intakeEncoder.getVelocity();
@@ -162,15 +199,14 @@ public class Intake implements Subsystem{
         System.out.println("Starting Signal due to getIntakePivotRoutine");
         SignalLogger.start();
 
-        if(intakePivotRoutine == null) {
+        if (intakePivotRoutine == null) {
             intakePivotRoutine = new SysIdRoutine(
-                new SysIdRoutine.Config(Volts.of(0.4).per(Second),
-                Volts.of(4
-                ), null, state -> SignalLogger.writeString("SysID_IntakePivot", state.toString())
-                ), new SysIdRoutine.Mechanism((Voltage v) -> {
-                    intake.setIntakePivotVoltage(v.in(Volts));
-                }, null, intake)
-            );
+                    new SysIdRoutine.Config(Volts.of(0.4).per(Second),
+                            Volts.of(4), null,
+                            state -> SignalLogger.writeString("SysID_IntakePivot", state.toString())),
+                    new SysIdRoutine.Mechanism((Voltage v) -> {
+                        intake.setIntakePivotVoltage(v.in(Volts));
+                    }, null, intake));
         }
 
         return intakePivotRoutine;
@@ -192,5 +228,16 @@ public class Intake implements Subsystem{
     public void checkHardware() {
         HardwareFaultTracker.checkFault(intakeAlert, intake.hasActiveFault() || intake.hasActiveWarning());
         HardwareFaultTracker.checkFault(intakePivotAlert, !intakePivot.isAlive() || !intakePivot.isConnected());
+    }
+
+    @Override
+    public void periodic() {
+
+        // Hard safety: stop pivot if either limit switch is hit
+        if (bottomPressed() || topPressed()) {
+            stopIntakePivot();
+        }
+
+        log();
     }
 }
