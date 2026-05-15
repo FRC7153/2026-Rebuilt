@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.util.WPILibVersion;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.Constants.BuildConstants;
 import frc.robot.Constants.HardwareConstants;
 import frc.robot.Util.Utils;
 import frc.robot.Util.Dashboard.HardwareFaultTracker;
@@ -37,7 +38,7 @@ public final class Robot extends TimedRobot {
     SignalLogger.setPath("/u/CTRE_Signal_Logger");
 
     // Init logging
-    DataLogManager.logNetworkTables(true);
+    DataLogManager.logNetworkTables(BuildConstants.DATA_LOG_NETWORKTABLES_TO_DATALOG);
     DataLogManager.logConsoleOutput(true); // this is sometimes garbled
 
     DriverStation.startDataLog(DataLogManager.getLog(), true);
@@ -108,6 +109,9 @@ public final class Robot extends TimedRobot {
         m_autonomousCommand.cancel();
         m_autonomousCommand = null;
     }
+
+    // EventTrigger / PathPlanner side commands are not children of m_autonomousCommand.
+    CommandScheduler.getInstance().cancelAll();
     
     System.out.println("autonomousExit end: " + Timer.getFPGATimestamp());
   }

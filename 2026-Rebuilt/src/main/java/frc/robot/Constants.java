@@ -38,10 +38,22 @@ public class Constants {
     public class BuildConstants {
         public static final boolean PUBLISH_EVERYTHING = false;
         public static final boolean INCLUDE_TEST_AUTOS = false;
+
+        // stops logging everything to the rio after switch
+        public static final boolean DATA_LOG_NETWORKTABLES_TO_DATALOG = false;
+        // drivestate and pose NT logging taken down 
+        public static final boolean PUBLISH_SWERVE_DRIVE_NETWORK_TABLES = false;
+        // puts a cap on the rate of logging swerve info
+        public static final boolean THROTTLE_SWERVE_DRIVE_NETWORK_TABLES = true;
+        public static final double SWERVE_NT_MIN_PERIOD_SECONDS = 0.05;
+        //CTRE logger writes on every odometry tick (fixed)
+        public static final boolean WRITE_SWERVE_STATE_TO_SIGNAL_LOGGER = false;
     }
 
     public class DashboardConstants {
         public static final int ELASTIC_SERVER_PORT = 5800;
+        //elastic tab title to show when teleop starts:not the HTTP port
+        public static final String ELASTIC_TELEOP_TAB_NAME = "Teleop";
     }
     
     public class HardwareConstants {

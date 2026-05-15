@@ -124,11 +124,13 @@ public class RobotContainer {
 
     new EventTrigger("ExtendIntake")
     .and(isDuringAuto)
-      .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
+      .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED)
+          .withTimeout(3.0));
 
     new EventTrigger("RetractIntake")
       .and(isDuringAuto)
-      .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));
+      .onTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0)
+          .withTimeout(2.0));
 
     new EventTrigger("StationaryShoot")
       .and(isDuringAuto)
@@ -175,21 +177,19 @@ public class RobotContainer {
     //    point.withModuleDirection(new Rotation2d(-baseController.getLeftY(), -baseController.getLeftX()))
     //));
 
-    // Idle while the robot is disabled. This ensures the configured //FIXME
-    // neutral mode is applied to the drive motors while disabled.
-    //Mark: do this 
-    /*final var idle = new SwerveRequest.Idle();
+    // Brake modules while disabled (auto→teleop transition and between matches).
+    final var idle = new SwerveRequest.Idle();
     RobotModeTriggers.disabled().whileTrue(
         drivetrain.applyRequest(() -> idle).ignoringDisable(true)
     );
-      */
 
     isEnabledTrigger
       .onTrue(dashboard.getRestartTimerCommand())
       .onFalse(dashboard.getStopTimerCommand());
 
     isTeleopTrigger
-      .onTrue(new InstantCommand(() -> Elastic.selectTab(DashboardConstants.ELASTIC_SERVER_PORT)).ignoringDisable(true));
+      .onTrue(new InstantCommand(() -> Elastic.selectTab(DashboardConstants.ELASTIC_TELEOP_TAB_NAME))
+          .ignoringDisable(true));
 
     //baseController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
