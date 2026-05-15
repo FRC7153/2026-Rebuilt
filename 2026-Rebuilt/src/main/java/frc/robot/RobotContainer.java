@@ -133,7 +133,7 @@ public class RobotContainer {
     new EventTrigger("StationaryShoot")
       .and(isDuringAuto)
       .onTrue(new ParallelCommandGroup(
-        new ShootCommand(shooter, 24.25, 0.5, -0.7).withTimeout(8.0),
+        new ShootCommand(shooter, 24.25, 0.2, -0.3).withTimeout(8.0),
         new SequentialCommandGroup(new WaitCommand(4.0), 
           new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1).withTimeout(8.0)
         )
@@ -200,7 +200,7 @@ public class RobotContainer {
     baseController.povUp().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
     // Passing Button
-    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 33.0, 0.5, -0.80));
+    baseController.rightTrigger().whileTrue(new ShootCommand(shooter, 15.0, 0.2, -0.2));
 
     baseController.leftTrigger().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED));
     baseController.rightBumper().whileTrue(new DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0));

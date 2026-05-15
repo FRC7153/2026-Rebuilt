@@ -100,8 +100,8 @@ public class Constants {
             .withKG(2.0).withGravityType(GravityTypeValue.Arm_Cosine); 
         
         public static final MotionMagicConfigs intakePivotMotionMagiv = new MotionMagicConfigs()
-            .withMotionMagicCruiseVelocity(60)
-            .withMotionMagicAcceleration(160)
+            .withMotionMagicCruiseVelocity(20)
+            .withMotionMagicAcceleration(140)
             .withMotionMagicJerk(1000);
         
         public static final CurrentLimitsConfigs INTAKE_PIVOT_CURRENT_LIMITS_CONFIGS =
@@ -215,8 +215,8 @@ public class Constants {
     }
     public class RobotConstants {
         // Intake Robot Constants
-        public static final double INTAKE_PIVOT_STOW = -0.013; 
-        public static final double INTAKE_PIVOT_EXTEND = -0.96; 
+        public static final double INTAKE_PIVOT_STOW = -0.03709; 
+        public static final double INTAKE_PIVOT_EXTEND = -1.39; 
         public static final double INTAKE_EXTEND_SPEED = -6000; //RPM, negative is inwards
     }
 } 
