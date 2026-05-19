@@ -25,6 +25,12 @@
                 "data": {
                   "pathName": "BlueLB2ndPass"
                 }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 5.0
+                }
               }
             ]
           }
