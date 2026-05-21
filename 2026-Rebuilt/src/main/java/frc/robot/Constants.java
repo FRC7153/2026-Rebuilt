@@ -38,22 +38,10 @@ public class Constants {
     public class BuildConstants {
         public static final boolean PUBLISH_EVERYTHING = false;
         public static final boolean INCLUDE_TEST_AUTOS = false;
-
-        // stops logging everything to the rio after switch
-        public static final boolean DATA_LOG_NETWORKTABLES_TO_DATALOG = false;
-        // drivestate and pose NT logging taken down 
-        public static final boolean PUBLISH_SWERVE_DRIVE_NETWORK_TABLES = false;
-        // puts a cap on the rate of logging swerve info
-        public static final boolean THROTTLE_SWERVE_DRIVE_NETWORK_TABLES = true;
-        public static final double SWERVE_NT_MIN_PERIOD_SECONDS = 0.05;
-        //CTRE logger writes on every odometry tick (fixed)
-        public static final boolean WRITE_SWERVE_STATE_TO_SIGNAL_LOGGER = false;
     }
 
     public class DashboardConstants {
         public static final int ELASTIC_SERVER_PORT = 5800;
-        //elastic tab title to show when teleop starts:not the HTTP port
-        public static final String ELASTIC_TELEOP_TAB_NAME = "Teleop";
     }
     
     public class HardwareConstants {
@@ -96,10 +84,6 @@ public class Constants {
         // CAN Busses
         public final static CANBus CANIVORE = new CANBus("CANivore");
         public final static CANBus RIO_CAN = new CANBus("rio");
-
-        // Limit Switch IDs
-        public static final int INTAKE_BOTTOM_LIMIT_DIO = 0;
-        public static final int INTAKE_TOP_LIMIT_DIO = 1;
     }
 
     public class IntakeConstants {
@@ -112,9 +96,9 @@ public class Constants {
             .withKG(2.0).withGravityType(GravityTypeValue.Arm_Cosine); 
         
         public static final MotionMagicConfigs intakePivotMotionMagiv = new MotionMagicConfigs()
-            .withMotionMagicCruiseVelocity(20)
-            .withMotionMagicAcceleration(140)
-            .withMotionMagicJerk(1000);
+            .withMotionMagicCruiseVelocity(5)
+            .withMotionMagicAcceleration(6)
+            .withMotionMagicJerk(7);
         
         public static final CurrentLimitsConfigs INTAKE_PIVOT_CURRENT_LIMITS_CONFIGS =
             new CurrentLimitsConfigs()
@@ -227,8 +211,8 @@ public class Constants {
     }
     public class RobotConstants {
         // Intake Robot Constants
-        public static final double INTAKE_PIVOT_STOW = -0.03709; 
-        public static final double INTAKE_PIVOT_EXTEND = -1.39; 
+        public static final double INTAKE_PIVOT_STOW = -0.02; 
+        public static final double INTAKE_PIVOT_EXTEND = -0.83; 
         public static final double INTAKE_EXTEND_SPEED = -6000; //RPM, negative is inwards
     }
 } 
