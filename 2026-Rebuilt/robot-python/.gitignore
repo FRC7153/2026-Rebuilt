@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+*.wpilog
+*.hoot
+logs/
+.simlogs/
+ctre_sim/
+networktables.json
+simgui*.json
+.pytest_cache/
