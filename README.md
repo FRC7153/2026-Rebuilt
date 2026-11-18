@@ -4,6 +4,8 @@ FRC 7153 robot code for the 2026 season (REBUILT), written in Python with [Robot
 
 The code lives in `2026-Rebuilt/robot-python`. Previous Java version: see the `main` branch history before the Python port.
 
+**Quick reference (deploy, sim, controls): [`REFERENCE.md`](2026-Rebuilt/robot-python/REFERENCE.md)**
+
 ## Setup (once per laptop)
 
 ```bash

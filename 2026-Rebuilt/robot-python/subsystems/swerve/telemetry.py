@@ -18,7 +18,7 @@ Published topics (all visible in AdvantageScope):
 import ntcore
 from pathplannerlib.logging import PathPlannerLogging
 from phoenix6 import SignalLogger, swerve
-from wpilib import Color, Color8Bit, Mechanism2d, SmartDashboard
+from wpilib import Color, Color8Bit, Mechanism2d, RobotBase, SmartDashboard
 from wpimath.geometry import Pose2d
 from wpimath.kinematics import ChassisSpeeds, SwerveModulePosition, SwerveModuleState
 
@@ -34,7 +34,10 @@ class Telemetry:
         """
         self._max_speed = max_speed
         self._counter = 0
-        SignalLogger.start()
+        # Only on the real robot: in sim the CTRE .hoot log records every simulated
+        # motor signal and grows by ~250 MB per hour (it hit 4 GB overnight).
+        if RobotBase.isReal():
+            SignalLogger.start()
 
         # What to publish over networktables for telemetry
         inst = ntcore.NetworkTableInstance.getDefault()
