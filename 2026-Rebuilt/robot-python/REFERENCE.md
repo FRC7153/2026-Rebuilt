@@ -4,16 +4,27 @@ All commands are run in a terminal **inside the `robot-python` folder**.
 
 ## First-time setup (once per laptop)
 
-1. Install **Python 3.14** (64-bit) from python.org. Tick "Add Python to PATH".
+1. Install **Python 3.14** from python.org.
+   - Windows: get the 64-bit installer and tick "Add Python to PATH".
+   - Mac: get the macOS installer. Don't use the `python3` that came with the Mac; it's too old.
 2. Get the code:
    ```
    git clone https://github.com/FRC7153/2026-Rebuilt.git
    cd 2026-Rebuilt/2026-Rebuilt/robot-python
    ```
-3. Make the virtual environment and install everything:
+3. Make the virtual environment and install everything.
+
+   **Windows**
    ```
    python -m venv .venv
    .venv\Scripts\activate
+   pip install robotpy
+   robotpy sync
+   ```
+   **Mac**
+   ```
+   python3 -m venv .venv
+   source .venv/bin/activate
    pip install robotpy
    robotpy sync
    ```
@@ -21,10 +32,14 @@ All commands are run in a terminal **inside the `robot-python` folder**.
 
 ## Every time you open a terminal
 
-```
-.venv\Scripts\activate
-```
+| Windows | Mac |
+|---|---|
+| `.venv\Scripts\activate` | `source .venv/bin/activate` |
+
 You'll see `(.venv)` at the start of the prompt. If a command says "robotpy not found", you forgot this.
+After that, every `robotpy ...` command below is the same on Windows and Mac.
+
+**Mac note:** you can deploy, test and run the sim from a Mac, but the FRC Driver Station is Windows-only, so a Windows laptop is still needed to enable and drive the robot.
 
 ## Deploy code to the robot
 
