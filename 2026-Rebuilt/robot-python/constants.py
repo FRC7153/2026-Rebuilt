@@ -1,8 +1,10 @@
 """Robot-wide constants (port of Constants.java)."""
 
 from phoenix6 import CANBus, configs, signals
+from wpilib import CANPort
 from rev import FeedbackSensor, SparkBaseConfig, SparkFlexConfig
-from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
+
+from util.field_tags import FieldTags
 
 
 # Velocity feedforward for a NEO Vortex in RPM velocity mode: 12 V spread over its
@@ -18,7 +20,7 @@ class AprilTagConstants:
     TARGET_HEIGHT = 1.12  # TODO meters
     CAMERA_ANGLE_DEG = 10.0  # TODO degrees
 
-    FIELD = AprilTagFieldLayout.loadField(AprilTagField.kDefaultField)  # TODO
+    FIELD = FieldTags()  # read from deploy/apriltagfiles (2027 has no AprilTagFieldLayout)
 
 
 class BuildConstants:
@@ -73,7 +75,11 @@ class HardwareConstants:
 
     # CAN busses
     CANIVORE = CANBus("CANivore")
-    RIO_CAN = CANBus("rio")
+    # SystemCore has 5 built-in CAN ports (CAN_S0..CAN_S4). The SPARKs (and anything
+    # that used to be on the roboRIO bus) are assumed to be on CAN_S2, the default.
+    # TODO: change this if the robot is wired to a different port.
+    SYSTEMCORE_CAN_PORT = CANPort.CAN_S2
+    RIO_CAN = CANBus(SYSTEMCORE_CAN_PORT)
 
 
 class IntakeConstants:
@@ -142,12 +148,12 @@ class IntakeConstants:
     def intake_config() -> SparkFlexConfig:
         """Intake roller leader config (NEO Vortex / SPARK Flex)."""
         cfg = SparkFlexConfig()
-        cfg.setIdleMode(SparkBaseConfig.IdleMode.kCoast)
+        cfg.set_idle_mode(SparkBaseConfig.IdleMode.COAST)
         cfg.inverted(False)
-        cfg.smartCurrentLimit(30)
-        cfg.closedLoop.setFeedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        cfg.closedLoop.pid(IntakeConstants.INTAKE_P, 0.0, 0.0)
-        cfg.closedLoop.feedForward.kV(VORTEX_KV)
+        cfg.smart_current_limit(30)
+        cfg.closed_loop.set_feedback_sensor(FeedbackSensor.PRIMARY_ENCODER)
+        cfg.closed_loop.pid(IntakeConstants.INTAKE_P, 0.0, 0.0)
+        cfg.closed_loop.feed_forward.v(VORTEX_KV)
         return cfg
 
     @staticmethod
@@ -209,23 +215,23 @@ class ShooterConstants:
     def kicker_config() -> SparkFlexConfig:
         """Kicker config (NEO Vortex / SPARK Flex)."""
         cfg = SparkFlexConfig()
-        cfg.setIdleMode(SparkBaseConfig.IdleMode.kCoast)
+        cfg.set_idle_mode(SparkBaseConfig.IdleMode.COAST)
         cfg.inverted(False)
-        cfg.smartCurrentLimit(40)
-        cfg.closedLoop.setFeedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        cfg.closedLoop.pid(0.0001, 0.0, 0.0)
-        cfg.closedLoop.feedForward.kV(VORTEX_KV)
+        cfg.smart_current_limit(40)
+        cfg.closed_loop.set_feedback_sensor(FeedbackSensor.PRIMARY_ENCODER)
+        cfg.closed_loop.pid(0.0001, 0.0, 0.0)
+        cfg.closed_loop.feed_forward.v(VORTEX_KV)
         return cfg
 
     @staticmethod
     def livefloor_config() -> SparkFlexConfig:
         """Live floor config (NEO Vortex / SPARK Flex)."""
         cfg = SparkFlexConfig()
-        cfg.setIdleMode(SparkBaseConfig.IdleMode.kCoast)
+        cfg.set_idle_mode(SparkBaseConfig.IdleMode.COAST)
         cfg.inverted(False)
-        cfg.smartCurrentLimit(30)
-        cfg.closedLoop.setFeedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        cfg.closedLoop.pid(0.0, 0.0, 0.0)  # TODO
+        cfg.smart_current_limit(30)
+        cfg.closed_loop.set_feedback_sensor(FeedbackSensor.PRIMARY_ENCODER)
+        cfg.closed_loop.pid(0.0, 0.0, 0.0)  # TODO
         return cfg
 
 

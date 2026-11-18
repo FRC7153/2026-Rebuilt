@@ -2,13 +2,15 @@
 matches and counts up during practice.
 """
 
+import telemetry
 import os
 
 import ntcore
 import wpilib
 from commands2 import Command, CommandScheduler, InstantCommand
 from commands2.button import CommandGenericHID
-from wpilib import Alert, DriverStation, SmartDashboard, Timer
+from wpilib import RobotState, Timer
+from wpiutil import Alert
 
 from constants import BuildConstants, DashboardConstants
 
@@ -19,22 +21,22 @@ class Dashboard:
         :param controllers: Controllers to check
         """
         self._match_time_pub = (
-            ntcore.NetworkTableInstance.getDefault().getDoubleTopic("Elastic/matchTime").publish()
+            ntcore.NetworkTableInstance.get_default().get_double_topic("Elastic/matchTime").publish()
         )
         self._match_timer = Timer()
 
         self._controllers = controllers
         self._controller_alerts = [
-            Alert(f"Controller {c} not connected", Alert.AlertType.kError) for c in range(len(controllers))
+            Alert(f"Controller {c} not connected", f"Controller {c} not connected", Alert.Level.HIGH) for c in range(len(controllers))
         ]
 
         # Host Elastic configuration file
         if BuildConstants.PUBLISH_EVERYTHING:
             import wpinet
 
-            wpinet.WebServer.getInstance().start(
+            wpinet.WebServer.get_instance().start(
                 DashboardConstants.ELASTIC_SERVER_PORT,
-                os.path.join(wpilib.getDeployDirectory(), "Elastic"),
+                os.path.join(wpilib.get_deploy_directory(), "Elastic"),
             )
             print("Began hosting Elastic's web server")
         else:
@@ -46,25 +48,25 @@ class Dashboard:
 
         # Begin hosting CommandScheduler for debugging
         if BuildConstants.PUBLISH_EVERYTHING:
-            SmartDashboard.putData("Commands", CommandScheduler.getInstance())
+            telemetry.log("Commands", CommandScheduler.get_instance())
 
     def get_restart_timer_command(self) -> Command:
         """A command to restart the timer. Run when the robot is enabled."""
-        return InstantCommand(self._match_timer.restart).ignoringDisable(True)
+        return InstantCommand(self._match_timer.restart).ignoring_disable(True)
 
     def get_stop_timer_command(self) -> Command:
         """A command to stop the timer. Run when the robot is disabled."""
-        return InstantCommand(self._match_timer.stop).ignoringDisable(True)
+        return InstantCommand(self._match_timer.stop).ignoring_disable(True)
 
-    def set_all_rumble(self, rumble_type: wpilib.interfaces.GenericHID.RumbleType, value: float) -> None:
+    def set_all_rumble(self, rumble_type: wpilib.GenericHID.RumbleType, value: float) -> None:
         """Sets the rumble of all controllers."""
         for controller in self._controllers:
-            controller.setRumble(rumble_type, value)
+            controller.get_hid().set_rumble(rumble_type, value)
 
     def update(self) -> None:
-        mt = Timer.getMatchTime()
+        mt = Timer.get_match_time()
 
-        if mt < 0 and not DriverStation.isFMSAttached():
+        if mt < 0 and not RobotState.is_fms_attached():
             # No FMS match time, count up instead of down
             self._match_time_pub.set(self._match_timer.get())
         else:
@@ -73,4 +75,4 @@ class Dashboard:
 
     def check_hardware(self) -> None:
         for controller, alert in zip(self._controllers, self._controller_alerts):
-            alert.set(not controller.isConnected())
+            alert.set(not controller.get_hid().is_connected())

@@ -1,7 +1,7 @@
 """Calculates the derivative of a value with respect to time."""
 
 from wpilib import Timer
-from wpimath.filter import LinearFilter
+from wpimath import LinearFilter
 
 
 class DerivativeCalculator:
@@ -9,7 +9,7 @@ class DerivativeCalculator:
         """
         :param filter_taps: Number of taps for the moving average that smooths the derivative.
         """
-        self._filter = LinearFilter.movingAverage(filter_taps)
+        self._filter = LinearFilter.moving_average(filter_taps)
         self._last_value = 0.0
         self._last_ts = 0.0
         self._first_run = True
@@ -19,7 +19,7 @@ class DerivativeCalculator:
         :param new_value: The next value.
         :returns: The (smoothed) derivative. 0.0 on the first run.
         """
-        ts = Timer.getFPGATimestamp()
+        ts = Timer.get_timestamp()
 
         if not self._first_run:
             dt = ts - self._last_ts
@@ -31,8 +31,8 @@ class DerivativeCalculator:
         self._last_value = new_value
         self._last_ts = ts
 
-        return self._filter.lastValue()
+        return self._filter.last_value()
 
     def last_value(self) -> float:
         """The last derivative calculated."""
-        return self._filter.lastValue()
+        return self._filter.last_value()

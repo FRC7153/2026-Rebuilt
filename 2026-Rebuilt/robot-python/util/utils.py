@@ -5,9 +5,9 @@ import traceback
 from typing import Callable, TypeVar
 
 from commands2 import Command
-from wpilib import DriverStation, Timer
-from wpimath.geometry import Pose2d, Rotation2d, Translation2d
-from wpimath.kinematics import ChassisSpeeds
+from wpilib import Alliance, MatchState, Timer
+from wpimath import Pose2d, Rotation2d, Translation2d
+from wpimath import ChassisVelocities
 
 from constants import AprilTagConstants
 from libs import elastic
@@ -29,7 +29,7 @@ def is_red_alliance(warn_if_fails: bool = True) -> bool:
     :param warn_if_fails: If a warning should be reported when the alliance is unknown.
     :returns: If the current alliance is red alliance (False if unknown).
     """
-    alliance = DriverStation.getAlliance()
+    alliance = MatchState.get_alliance()
     if alliance is None:
         if warn_if_fails:
             # Attempted to check alliance before it was received!
@@ -43,7 +43,7 @@ def is_red_alliance(warn_if_fails: bool = True) -> bool:
                 )
             )
         return False
-    return alliance == DriverStation.Alliance.kRed
+    return alliance == Alliance.RED
 
 
 def apply_deadband(value: float, minimum: float) -> float:
@@ -51,9 +51,9 @@ def apply_deadband(value: float, minimum: float) -> float:
     return 0.0 if abs(value) < minimum else value
 
 
-def deadband_chassis_speeds(speeds: ChassisSpeeds, xy_min: float, omega_min: float) -> ChassisSpeeds:
+def deadband_chassis_speeds(speeds: ChassisVelocities, xy_min: float, omega_min: float) -> ChassisVelocities:
     """Returns the speeds with translational (m/s) and rotational (rad/s) deadbands applied."""
-    return ChassisSpeeds(
+    return ChassisVelocities(
         apply_deadband(speeds.vx, xy_min),
         apply_deadband(speeds.vy, xy_min),
         apply_deadband(speeds.omega, omega_min),
@@ -61,23 +61,23 @@ def deadband_chassis_speeds(speeds: ChassisSpeeds, xy_min: float, omega_min: flo
 
 
 def is_pose2d_nan(pose: Pose2d) -> bool:
-    return math.isnan(pose.X()) or math.isnan(pose.Y()) or math.isnan(pose.rotation().radians())
+    return math.isnan(pose.x) or math.isnan(pose.y) or math.isnan(pose.rotation().radians())
 
 
 def get_tag_pose(tag: int) -> Translation2d:
     """The 2d position of the given AprilTag on the field."""
-    pose = AprilTagConstants.FIELD.getTagPose(tag)
+    pose = AprilTagConstants.FIELD.get_tag_pose(tag)
     if pose is None:
         console_logger.report_warning(f"Unknown tag request (id {tag})")
         return Translation2d()
-    return Translation2d(pose.X(), pose.Y())
+    return Translation2d(pose.x, pose.y)
 
 
 def time_instantiation(constructor: Callable[[], T]) -> T:
     """Times and prints how long it takes to instantiate an object."""
-    start = Timer.getFPGATimestamp()
+    start = Timer.get_timestamp()
     obj = constructor()
-    elapsed = Timer.getFPGATimestamp() - start
+    elapsed = Timer.get_timestamp() - start
     print(f"{type(obj).__name__} took {elapsed:.4f} seconds to instantiate")
     return obj
 

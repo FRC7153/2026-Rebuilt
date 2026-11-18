@@ -2,7 +2,7 @@
 
 import wpilib
 from phoenix6 import CANBus
-from wpiutil.log import IntegerLogEntry
+from wpilog import IntegerLogEntry
 
 
 class CANLogger:
@@ -12,7 +12,7 @@ class CANLogger:
         self._busses = busses
         self._logs: list[tuple[IntegerLogEntry, IntegerLogEntry, IntegerLogEntry, IntegerLogEntry]] = []
 
-        log = wpilib.DataLogManager.getLog()
+        log = wpilib.DataLogManager.get_log()
         for bus in busses:
             title = f"CAN/{bus.name}/"
             self._logs.append(

@@ -1,11 +1,11 @@
 """Reports warnings/errors to the driver station and the WPILog 'messages' entry.
 
-(Plain console output is already captured by DataLogManager.logConsoleOutput.)
+(Plain console output is already captured by DataLogManager.log_console_output.)
 """
 
 import ntcore
 import wpilib
-from wpiutil.log import StringLogEntry
+from wpilog import StringLogEntry
 
 from constants import BuildConstants
 
@@ -16,9 +16,9 @@ _out_pub: ntcore.StringPublisher | None = None
 def init() -> None:
     """Starts logging warnings/errors to the WPILog file."""
     global _out_log, _out_pub
-    _out_log = StringLogEntry(wpilib.DataLogManager.getLog(), "messages")
+    _out_log = StringLogEntry(wpilib.DataLogManager.get_log(), "messages")
     if BuildConstants.PUBLISH_EVERYTHING:
-        _out_pub = ntcore.NetworkTableInstance.getDefault().getStringTopic("ConsoleOut").publish()
+        _out_pub = ntcore.NetworkTableInstance.get_default().get_string_topic("ConsoleOut").publish()
 
 
 def _record(msg: str) -> None:
@@ -31,10 +31,10 @@ def _record(msg: str) -> None:
 def report_warning(msg: str) -> None:
     """Reports a warning to the driver station and the log."""
     _record("[WARNING] " + msg)
-    wpilib.reportWarning(msg, False)
+    wpilib.report_warning(msg, False)
 
 
 def report_error(msg: str) -> None:
     """Reports an error to the driver station and the log."""
     _record("[ERROR] " + msg)
-    wpilib.reportError(msg, False)
+    wpilib.report_error(msg, False)

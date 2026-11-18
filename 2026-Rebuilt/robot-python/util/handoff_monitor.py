@@ -55,12 +55,12 @@ class HandoffMonitor:
         self._reported = False
 
     def start(self) -> None:
-        """Call from teleopInit."""
-        default = self._drivetrain.getDefaultCommand()
-        self._default_command_name = default.getName() if default is not None else None
+        """Call from teleop_init."""
+        default = self._drivetrain.get_default_command()
+        self._default_command_name = default.get_name() if default is not None else None
 
         self._active = True
-        self._start = Timer.getFPGATimestamp()
+        self._start = Timer.get_timestamp()
         self._last_loop = self._start
         self._worst_loop = 0.0
         self._min_voltage = 99.0
@@ -71,7 +71,7 @@ class HandoffMonitor:
         self._reported = False
 
     def stop(self) -> None:
-        """Call from teleopExit."""
+        """Call from teleop_exit."""
         self._active = False
 
     def update(self) -> None:
@@ -79,21 +79,21 @@ class HandoffMonitor:
         if not self._active:
             return
 
-        now = Timer.getFPGATimestamp()
+        now = Timer.get_timestamp()
         elapsed = now - self._start
 
         self._worst_loop = max(self._worst_loop, now - self._last_loop)
         self._last_loop = now
-        self._min_voltage = min(self._min_voltage, RobotController.getBatteryVoltage())
-        self._browned_out = self._browned_out or RobotController.isBrownedOut()
+        self._min_voltage = min(self._min_voltage, RobotController.get_battery_voltage())
+        self._browned_out = self._browned_out or RobotController.is_browned_out()
 
         pushing = self._stick_magnitude() > self.STICK_THRESHOLD
         if pushing and self._first_stick is None:
             self._first_stick = elapsed
 
         if pushing and self._first_response is None:
-            owner = self._drivetrain.getCurrentCommand()
-            owner_name = owner.getName() if owner is not None else None
+            owner = self._drivetrain.get_current_command()
+            owner_name = owner.get_name() if owner is not None else None
 
             if self._commanded_speed() > self.RESPONSE_THRESHOLD:
                 self._first_response = elapsed

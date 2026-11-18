@@ -31,7 +31,7 @@ class ShootCommand(Command):
         self._shooter_velo = shooter_velo
         self._kicker_speed = kicker_speed
         self._live_floor_speed = live_floor_speed
-        self.addRequirements(shooter)
+        self.add_requirements(shooter)
 
     def execute(self) -> None:
         # Always command the flywheel
@@ -49,7 +49,7 @@ class ShootCommand(Command):
             # Shooter ready -> feed
             self._shooter.set_kicker_velo(self._kicker_speed * 10000)
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return False
 
 
@@ -64,7 +64,7 @@ class DistanceShootCommand(Command):
         self._shooter = shooter
         self._feed_timer = Timer()
         self._feeding = False
-        self.addRequirements(shooter)
+        self.add_requirements(shooter)
 
     def initialize(self) -> None:
         self._feeding = False
@@ -87,9 +87,9 @@ class DistanceShootCommand(Command):
             # Feed the fuel through
             self._shooter.set_kicker_speed(KICKER_FEED)
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         # Give the fuel enough time to fully exit after feeding starts
-        return self._feeding and self._feed_timer.hasElapsed(self.FEED_TIME)
+        return self._feeding and self._feed_timer.has_elapsed(self.FEED_TIME)
 
     def end(self, interrupted: bool) -> None:
         self._shooter.stop_shooter_sub()

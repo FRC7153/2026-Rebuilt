@@ -15,10 +15,13 @@ import math
 import ntcore
 import rev
 from phoenix6 import sim as ctre_sim
-from pyfrc.physics.core import PhysicsInterface
-from wpilib import DriverStation, RobotController
+try:
+    from pyfrc.physics.core import PhysicsInterface
+except ImportError:  # pyfrc has no working 2027 release yet; this file is unused until it does
+    PhysicsInterface = object
+from wpilib import Alliance, MatchState, RobotController, RobotState
 from wpilib.simulation import DCMotorSim
-from wpimath.system.plant import DCMotor, LinearSystemId
+from wpimath import DCMotor, LinearSystemId
 
 from constants import AprilTagConstants, IntakeConstants, ShooterConstants
 from fuel_sim import KICKER_FEED_OUTPUT, PIVOT_EXTENDED_BELOW, ROLLER_INTAKE_RPM, FuelSim
@@ -42,7 +45,7 @@ class _TalonSim:
     def __init__(self, talon, gearing: float, moi: float, inverted: bool) -> None:
         self._state = talon.sim_state
         self._gearing = gearing
-        gearbox = DCMotor.krakenX60(1)
+        gearbox = DCMotor.kraken_x60(1)
         self._model = DCMotorSim(LinearSystemId.DCMotorSystem(gearbox, moi, gearing), gearbox)
         if inverted:
             self._state.orientation = ctre_sim.ChassisReference.CLOCKWISE_POSITIVE
@@ -59,17 +62,17 @@ class _SparkSim:
     """A SPARK Flex spinning a light roller: speed simply follows the applied output."""
 
     def __init__(self, spark: rev.SparkFlex) -> None:
-        self._motor = DCMotor.neoVortex(1)
+        self._motor = DCMotor.neo_vortex(1)
         self._sim = rev.SparkFlexSim(spark, self._motor)
-        self._free_speed_rpm = self._motor.freeSpeed * 60.0 / (2.0 * math.pi)
+        self._free_speed_rpm = self._motor.free_speed * 60.0 / (2.0 * math.pi)
         self._velocity = 0.0
 
     @property
     def applied_output(self) -> float:
-        return self._sim.getAppliedOutput()
+        return self._sim.get_applied_output()
 
     def update(self, dt: float, battery_voltage: float) -> None:
-        target = self._sim.getAppliedOutput() * self._free_speed_rpm
+        target = self._sim.get_applied_output() * self._free_speed_rpm
         alpha = min(1.0, dt / SPARK_SPINUP_TIME)
         self._velocity += (target - self._velocity) * alpha
         self._sim.iterate(self._velocity, battery_voltage, dt)
@@ -85,17 +88,17 @@ class PhysicsEngine:
         self.fuel = FuelSim()
         self._was_auto = False
 
-        nt = ntcore.NetworkTableInstance.getDefault()
+        nt = ntcore.NetworkTableInstance.get_default()
         self._heartbeat = 0.0
         self._heartbeat_pubs = [
-            nt.getTable(name).getDoubleTopic("hb").publish()
+            nt.get_table(name).get_double_topic("hb").publish()
             for name in (AprilTagConstants.LL_4_FRONT, AprilTagConstants.LL_3_BACK)
         ]
-        front = nt.getTable(AprilTagConstants.LL_4_FRONT)
-        self._t2d_pub = front.getDoubleArrayTopic("t2d").publish()
-        self._ty_pub = front.getDoubleTopic("ty").publish()
-        self._tx_pub = front.getDoubleTopic("tx").publish()
-        self._fiducials_pub = front.getDoubleArrayTopic("rawfiducials").publish()
+        front = nt.get_table(AprilTagConstants.LL_4_FRONT)
+        self._t2d_pub = front.get_double_array_topic("t2d").publish()
+        self._ty_pub = front.get_double_topic("ty").publish()
+        self._tx_pub = front.get_double_topic("tx").publish()
+        self._fiducials_pub = front.get_double_array_topic("rawfiducials").publish()
 
     def _setup(self) -> bool:
         """The robot's hardware only exists once robotInit has run, so set up lazily."""
@@ -127,7 +130,7 @@ class PhysicsEngine:
             if not self._ready:
                 return
 
-        battery_voltage = RobotController.getBatteryVoltage()
+        battery_voltage = RobotController.get_battery_voltage()
         for talon in self._talons:
             talon.update(tm_diff, battery_voltage)
         for spark in self._sparks:
@@ -140,13 +143,13 @@ class PhysicsEngine:
 
     def _update_fuel(self, dt: float) -> None:
         # Fresh field and a preloaded robot every time autonomous starts
-        is_auto = DriverStation.isAutonomousEnabled()
+        is_auto = RobotState.is_autonomous_enabled()
         if is_auto and not self._was_auto:
             self.fuel.reset()
         self._was_auto = is_auto
 
         state = self._drivetrain.get_state()
-        enabled = DriverStation.isEnabled()
+        enabled = RobotState.is_enabled()
         intake_running = (
             enabled
             and self._intake.get_intake_pivot_position() < PIVOT_EXTENDED_BELOW
@@ -157,7 +160,7 @@ class PhysicsEngine:
         self.fuel.update(
             dt,
             state.pose,
-            state.speeds,
+            state.velocity,
             intake_running,
             self._shooter.get_shooter_velocity(),
             kicker_feeding,
@@ -171,18 +174,18 @@ class PhysicsEngine:
             pub.set(self._heartbeat)
 
         pose = self._drivetrain.get_state().pose
-        is_red = DriverStation.getAlliance() == DriverStation.Alliance.kRed
+        is_red = MatchState.get_alliance() == Alliance.RED
         heading = pose.rotation().radians()
 
         fiducials: list[float] = []
         best: tuple[float, float] | None = None  # (abs tx, distance)
         for tag_id in RED_HUB_TAGS if is_red else BLUE_HUB_TAGS:
-            tag = AprilTagConstants.FIELD.getTagPose(tag_id)
+            tag = AprilTagConstants.FIELD.get_tag_pose(tag_id)
             if tag is None:
                 continue
 
-            dx = tag.X() - pose.X()
-            dy = tag.Y() - pose.Y()
+            dx = tag.x - pose.x
+            dy = tag.y - pose.y
             distance = math.hypot(dx, dy)
             if distance < 0.3 or distance > LIMELIGHT_MAX_RANGE:
                 continue
@@ -194,7 +197,7 @@ class PhysicsEngine:
                 continue
 
             # The camera only sees tags that face it
-            facing = tag.rotation().toRotation2d().radians()
+            facing = tag.rotation().to_rotation2d().radians()
             if math.cos(facing) * -dx + math.sin(facing) * -dy <= 0.2 * distance:
                 continue
 

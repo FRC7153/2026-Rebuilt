@@ -1,13 +1,19 @@
 """Subsystems, controller bindings and autonomous setup (port of RobotContainer.java)."""
 
+import telemetry
 import math
 
 from commands2 import Command, InstantCommand, ParallelCommandGroup, SequentialCommandGroup, WaitCommand
 from commands2.button import CommandXboxController, Trigger
-from pathplannerlib.auto import NamedCommands
-from pathplannerlib.events import EventTrigger
+# PathPlannerLib has no 2027 (SystemCore) release yet; autos are skipped without it.
+try:
+    from pathplannerlib.auto import NamedCommands
+    from pathplannerlib.events import EventTrigger
+except ImportError:
+    NamedCommands = EventTrigger = None
 from phoenix6 import swerve
-from wpilib import Color, Color8Bit, DriverStation, Mechanism2d, SmartDashboard, Timer
+from wpilib import Mechanism2d, RobotState, Timer
+from wpiutil import Color, Color8Bit
 
 from commands.intake_commands import DeployIntakeCommand, HoldIntakeCommand, HomeIntakeCommand
 from commands.point_to_hub_command import PointToHubCommand
@@ -71,8 +77,8 @@ class RobotContainer:
         self._drive_state = self.drivetrain.get_state()
         self._handoff_monitor = HandoffMonitor(
             self.drivetrain,
-            lambda: max(abs(self._base_controller.getLeftX()), abs(self._base_controller.getLeftY())),
-            lambda: max((abs(m.speed) for m in self._drive_state.module_targets), default=0.0),
+            lambda: max(abs(self._base_controller.get_left_x()), abs(self._base_controller.get_left_y())),
+            lambda: max((abs(m.velocity) for m in self._drive_state.module_targets), default=0.0),
         )
 
         # Auto (must be created after the drivetrain, which configures PathPlanner's AutoBuilder)
@@ -81,6 +87,8 @@ class RobotContainer:
     # ---------------------------------------------------------------------- auto
 
     def _configure_auto_commands(self) -> None:
+        if NamedCommands is None:
+            return
         intake = self._intake
         shooter = self._shooter
 
@@ -88,63 +96,63 @@ class RobotContainer:
             "StationaryShoot",
             ParallelCommandGroup(
                 SequentialCommandGroup(
-                    DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.6).withTimeout(1.5),
-                    DeployIntakeCommand(intake, 0.0008, -0.6).withTimeout(1.5),
-                    DeployIntakeCommand(intake, 0.25, -0.6).withTimeout(1.5),
-                    DeployIntakeCommand(intake, 0.25, -0.6).withTimeout(1.5),
+                    DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.6).with_timeout(1.5),
+                    DeployIntakeCommand(intake, 0.0008, -0.6).with_timeout(1.5),
+                    DeployIntakeCommand(intake, 0.25, -0.6).with_timeout(1.5),
+                    DeployIntakeCommand(intake, 0.25, -0.6).with_timeout(1.5),
                 ),
-                ShootCommand(shooter, 24.25, 0.5, -0.7).withTimeout(4),
+                ShootCommand(shooter, 24.25, 0.5, -0.7).with_timeout(4),
             ),
         )
 
         NamedCommands.registerCommand(
             "ExtendIntake",
-            DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.5).withTimeout(3.0),
+            DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.5).with_timeout(3.0),
         )
 
         NamedCommands.registerCommand(
             "RetractIntake",
-            DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0).withTimeout(2.0),
+            DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0).with_timeout(2.0),
         )
 
         NamedCommands.registerCommand(
             "RetractIntakeSpin",
-            DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, -0.5).withTimeout(3.0),
+            DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, -0.5).with_timeout(3.0),
         )
 
         NamedCommands.registerCommand(
             "BumpAuto",
             SequentialCommandGroup(
                 WaitCommand(2.5),
-                DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.6).withTimeout(2.75),
+                DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, -0.6).with_timeout(2.75),
                 # Was missing a timeout in Java, which made this named command never finish
-                DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0).withTimeout(2.0),
+                DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0).with_timeout(2.0),
             ),
         )
 
-        is_during_auto = Trigger(DriverStation.isAutonomousEnabled)
+        is_during_auto = Trigger(RobotState.is_autonomous_enabled)
 
-        EventTrigger("ExtendIntake").and_(is_during_auto).onTrue(
+        EventTrigger("ExtendIntake").and_(is_during_auto).on_true(
             DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED)
         )
 
-        EventTrigger("RetractIntake").and_(is_during_auto).onTrue(
+        EventTrigger("RetractIntake").and_(is_during_auto).on_true(
             DeployIntakeCommand(intake, RobotConstants.INTAKE_PIVOT_STOW, 0.0)
         )
 
-        EventTrigger("StationaryShoot").and_(is_during_auto).onTrue(
+        EventTrigger("StationaryShoot").and_(is_during_auto).on_true(
             ParallelCommandGroup(
-                ShootCommand(shooter, 15.0, 0.2, -0.2).withTimeout(8.0),
+                ShootCommand(shooter, 15.0, 0.2, -0.2).with_timeout(8.0),
                 SequentialCommandGroup(
                     WaitCommand(4.0),
                     DeployIntakeCommand(
                         intake, RobotConstants.INTAKE_PIVOT_EXTEND, RobotConstants.INTAKE_EXTEND_SPEED * -1
-                    ).withTimeout(8.0),
+                    ).with_timeout(8.0),
                 ),
             )
         )
 
-        EventTrigger("StopShooter").onTrue(ShootCommand(shooter, 0.0, 0.0, 0.0))
+        EventTrigger("StopShooter").on_true(ShootCommand(shooter, 0.0, 0.0, 0.0))
 
     # ------------------------------------------------------------------ bindings
 
@@ -160,39 +168,39 @@ class RobotContainer:
         intake_speed = RobotConstants.INTAKE_EXTEND_SPEED
 
         # Triggers
-        is_enabled_trigger = Trigger(DriverStation.isEnabled)
-        is_teleop_trigger = Trigger(DriverStation.isTeleopEnabled)
+        is_enabled_trigger = Trigger(RobotState.is_enabled)
+        is_teleop_trigger = Trigger(RobotState.is_teleop_enabled)
 
         # Note that X is defined as forward according to WPILib convention,
         # and Y is defined as to the left according to WPILib convention.
-        drivetrain.setDefaultCommand(
+        drivetrain.set_default_command(
             # Drivetrain will execute this command periodically
             drivetrain.apply_request(
                 lambda: (
-                    self._drive.with_velocity_x(-base.getLeftY() * self._max_speed)  # Drive forward with negative Y
-                    .with_velocity_y(-base.getLeftX() * self._max_speed)  # Drive left with negative X
-                    .with_rotational_rate(-base.getRightX() * self._max_angular_rate)  # CCW with negative X
+                    self._drive.with_velocity_x(-base.get_left_y() * self._max_speed)  # Drive forward with negative Y
+                    .with_velocity_y(-base.get_left_x() * self._max_speed)  # Drive left with negative X
+                    .with_rotational_rate(-base.get_right_x() * self._max_angular_rate)  # CCW with negative X
                 )
-            ).withName("TeleopDrive")
+            ).with_name("TeleopDrive")
         )
 
-        intake.setDefaultCommand(HoldIntakeCommand(intake))
+        intake.set_default_command(HoldIntakeCommand(intake))
 
-        shooter.setDefaultCommand(ShootCommand(shooter, 0.0, 0.0, 0.0))
+        shooter.set_default_command(ShootCommand(shooter, 0.0, 0.0, 0.0))
 
         # Idle while the robot is disabled. This ensures the configured
         # neutral mode is applied to the drive motors while disabled.
         idle = swerve.requests.Idle()
-        Trigger(DriverStation.isDisabled).whileTrue(
-            drivetrain.apply_request(lambda: idle).ignoringDisable(True).withName("DisabledIdle")
+        Trigger(RobotState.is_disabled).while_true(
+            drivetrain.apply_request(lambda: idle).ignoring_disable(True).with_name("DisabledIdle")
         )
 
-        is_enabled_trigger.onTrue(self._dashboard.get_restart_timer_command()).onFalse(
+        is_enabled_trigger.on_true(self._dashboard.get_restart_timer_command()).on_false(
             self._dashboard.get_stop_timer_command()
         )
 
-        is_teleop_trigger.onTrue(
-            InstantCommand(lambda: elastic.select_tab(DashboardConstants.TELEOP_TAB)).ignoringDisable(True)
+        is_teleop_trigger.on_true(
+            InstantCommand(lambda: elastic.select_tab(DashboardConstants.TELEOP_TAB)).ignoring_disable(True)
         )
 
         # ------------------------------ Base (driver) controller ------------------------------
@@ -200,84 +208,84 @@ class RobotContainer:
         # X-brake the wheels.
         # (In Java this was on Y, which is also "point to hub" - both need the drivetrain,
         # so the brake could never run. It now lives on X, which was unused.)
-        base.x().whileTrue(drivetrain.apply_request(lambda: self._brake).withName("XBrake"))
+        base.x().while_true(drivetrain.apply_request(lambda: self._brake).with_name("XBrake"))
 
         # Point to hub
-        base.y().whileTrue(
+        base.y().while_true(
             PointToHubCommand(
                 drivetrain,
-                lambda: -base.getLeftY() * self._max_speed,
-                lambda: -base.getLeftX() * self._max_speed,
+                lambda: -base.get_left_y() * self._max_speed,
+                lambda: -base.get_left_x() * self._max_speed,
                 AprilTagConstants.LL_4_FRONT,
             )
         )
 
         # Reset gyro
-        base.povUp().onTrue(drivetrain.runOnce(drivetrain.seed_field_centric))
+        base.dpad_up().on_true(drivetrain.run_once(drivetrain.seed_field_centric))
 
         # Aim at the hub and shoot (left stick still translates while aiming)
-        base.rightTrigger().whileTrue(
+        base.right_trigger().while_true(
             ParallelCommandGroup(
                 PointToHubCommand(
                     drivetrain,
-                    lambda: -base.getLeftY() * self._max_speed,
-                    lambda: -base.getLeftX() * self._max_speed,
+                    lambda: -base.get_left_y() * self._max_speed,
+                    lambda: -base.get_left_x() * self._max_speed,
                     AprilTagConstants.LL_4_FRONT,
                 ),
                 ShootCommand(shooter, 24.25, 0.5, -0.6),
-            ).withName("AimAndShoot")
+            ).with_name("AimAndShoot")
         )
 
         # Passing shot
-        base.leftBumper().whileTrue(ShootCommand(shooter, 15.0, 0.2, -0.2))
+        base.left_bumper().while_true(ShootCommand(shooter, 15.0, 0.2, -0.2))
 
         # Intake
-        base.leftTrigger().whileTrue(DeployIntakeCommand(intake, extend, intake_speed))
-        base.rightBumper().whileTrue(DeployIntakeCommand(intake, stow, 0.0))
+        base.left_trigger().while_true(DeployIntakeCommand(intake, extend, intake_speed))
+        base.right_bumper().while_true(DeployIntakeCommand(intake, stow, 0.0))
 
         # Reverse intake
-        base.b().whileTrue(DeployIntakeCommand(intake, extend, intake_speed * -1))
+        base.b().while_true(DeployIntakeCommand(intake, extend, intake_speed * -1))
 
         # Distance shoot
-        base.a().and_(base.rightTrigger()).whileTrue(DistanceShootCommand(shooter))
+        base.a().and_(base.right_trigger()).while_true(DistanceShootCommand(shooter))
 
         # ---------------------------- Arms (operator) controller ----------------------------
 
         # Partially raise intake
-        arms.y().whileTrue(DeployIntakeCommand(intake, 0.18, 0.0))
+        arms.y().while_true(DeployIntakeCommand(intake, 0.18, 0.0))
 
         # Intake
-        arms.leftTrigger().whileTrue(DeployIntakeCommand(intake, extend, intake_speed))
-        arms.rightBumper().whileTrue(DeployIntakeCommand(intake, stow, 0.0))
-        arms.leftBumper().whileTrue(DeployIntakeCommand(intake, stow, intake_speed))
+        arms.left_trigger().while_true(DeployIntakeCommand(intake, extend, intake_speed))
+        arms.right_bumper().while_true(DeployIntakeCommand(intake, stow, 0.0))
+        arms.left_bumper().while_true(DeployIntakeCommand(intake, stow, intake_speed))
 
         # Shoot button
-        arms.rightTrigger().whileTrue(ShootCommand(shooter, 24.25, 0.5, -0.6))
+        arms.right_trigger().while_true(ShootCommand(shooter, 24.25, 0.5, -0.6))
 
         # Distance shoot (operator A while the driver holds the right trigger, as in Java)
-        arms.a().and_(base.rightTrigger()).whileTrue(DistanceShootCommand(shooter))
+        arms.a().and_(base.right_trigger()).while_true(DistanceShootCommand(shooter))
 
         # Reverse intake
-        arms.b().whileTrue(DeployIntakeCommand(intake, extend, intake_speed * -1))
+        arms.b().while_true(DeployIntakeCommand(intake, extend, intake_speed * -1))
 
     # ------------------------------------------------------------------ display
 
     def _configure_mechanism_display(self) -> None:
         """A side view of the intake pivot and shooter for AdvantageScope / Elastic / the sim GUI."""
         self._mechanism = Mechanism2d(1.2, 1.0)
-        self._intake_ligament = self._mechanism.getRoot("IntakePivot", 0.75, 0.2).appendLigament(
-            "Intake", 0.4, 90, 8, Color8Bit(Color.kOrange)
+        self._intake_ligament = self._mechanism.get_root("IntakePivot", 0.75, 0.2).append_ligament(
+            "Intake", 0.4, 90, 8, Color8Bit(Color.ORANGE)
         )
-        self._shooter_ligament = self._mechanism.getRoot("Shooter", 0.3, 0.2).appendLigament(
-            "Flywheel", 0.05, 90, 12, Color8Bit(Color.kGreen)
+        self._shooter_ligament = self._mechanism.get_root("Shooter", 0.3, 0.2).append_ligament(
+            "Flywheel", 0.05, 90, 12, Color8Bit(Color.GREEN)
         )
-        SmartDashboard.putData("Superstructure", self._mechanism)
+        telemetry.log("Superstructure", self._mechanism)
 
     def _update_mechanism_display(self) -> None:
         # Pivot: 0 rotations = stowed (straight up), negative = folding out toward the floor
-        self._intake_ligament.setAngle(90.0 + self._intake.get_intake_pivot_position() * 360.0 * 0.3)
+        self._intake_ligament.set_angle(90.0 + self._intake.get_intake_pivot_position() * 360.0 * 0.3)
         # Flywheel: bar grows with speed (100 rps = 0.6 m)
-        self._shooter_ligament.setLength(0.05 + abs(self._shooter.get_shooter_velocity()) * 0.006)
+        self._shooter_ligament.set_length(0.05 + abs(self._shooter.get_shooter_velocity()) * 0.006)
 
     # ------------------------------------------------------------------ periodic
 
@@ -320,9 +328,9 @@ class RobotContainer:
         """Builds the selected auto (does nothing if it is already built)."""
         if self._auto.is_loaded():
             return
-        start = Timer.getFPGATimestamp()
+        start = Timer.get_timestamp()
         self._auto.load_auto_command()
-        print(f"Pregame load took {Timer.getFPGATimestamp() - start:.2f} s")
+        print(f"Pregame load took {Timer.get_timestamp() - start:.2f} s")
 
     def get_home_intake_command(self) -> Command:
         return self._home_intake_command

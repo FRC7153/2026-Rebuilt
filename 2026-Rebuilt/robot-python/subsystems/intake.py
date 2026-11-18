@@ -6,9 +6,9 @@ from commands2 import Subsystem
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, controls, hardware
 from rev import PersistMode, ResetMode, SparkFlex, SparkLowLevel
-from wpilib import Alert
+from wpiutil import Alert
 from wpilib.sysid import SysIdRoutineLog
-from wpiutil.log import DoubleLogEntry
+from wpilog import DoubleLogEntry
 
 from constants import BuildConstants, HardwareConstants, IntakeConstants
 from util import hardware_fault_tracker
@@ -20,12 +20,11 @@ class Intake(Subsystem):
         super().__init__()
 
         self._pivot = hardware.TalonFX(HardwareConstants.INTAKE_PIVOT_CAN, HardwareConstants.CANIVORE)
-        self._intake = SparkFlex(HardwareConstants.INTAKE_CAN, SparkLowLevel.MotorType.kBrushless)
-        self._intake_follower = SparkFlex(
-            HardwareConstants.INTAKE_FOLLOWER_CAN, SparkLowLevel.MotorType.kBrushless
+        self._intake = SparkFlex(HardwareConstants.SYSTEMCORE_CAN_PORT, HardwareConstants.INTAKE_CAN, SparkLowLevel.MotorType.BRUSHLESS)
+        self._intake_follower = SparkFlex(HardwareConstants.SYSTEMCORE_CAN_PORT, HardwareConstants.INTAKE_FOLLOWER_CAN, SparkLowLevel.MotorType.BRUSHLESS
         )
-        self._intake_encoder = self._intake.getEncoder()
-        self._intake_controller = self._intake.getClosedLoopController()
+        self._intake_encoder = self._intake.get_encoder()
+        self._intake_controller = self._intake.get_closed_loop_controller()
 
         self._static_brake_request = controls.StaticBrake()
         self._voltage_request = controls.VoltageOut(0.0)
@@ -36,9 +35,9 @@ class Intake(Subsystem):
         self._pivot_position = self._pivot.get_position()
         self._pivot_stator_current = self._pivot.get_stator_current()
 
-        self._intake_alert = Alert("Intake Alert", Alert.AlertType.kError)
-        self._intake_follower_alert = Alert("Intake Follower Alert", Alert.AlertType.kError)
-        self._intake_pivot_alert = Alert("Intake Pivot Alert", Alert.AlertType.kError)
+        self._intake_alert = Alert("Intake Alert", "Intake Alert", Alert.Level.HIGH)
+        self._intake_follower_alert = Alert("Intake Follower Alert", "Intake Follower Alert", Alert.Level.HIGH)
+        self._intake_pivot_alert = Alert("Intake Pivot Alert", "Intake Pivot Alert", Alert.Level.HIGH)
 
         self._pivot_routine: SysIdRoutine | None = None
 
@@ -49,7 +48,7 @@ class Intake(Subsystem):
         self._roller_cache = SetpointCache()
 
         # Datalog
-        log = wpilib.DataLogManager.getLog()
+        log = wpilib.DataLogManager.get_log()
         self._intake_velo_log = DoubleLogEntry(log, "Intake/Velo", "RPM")
         self._intake_setpoint_log = DoubleLogEntry(log, "Intake/Setpoint", "RPM")
         self._intake_pivot_setpoint_log = DoubleLogEntry(log, "Intake/Pivot Setpoint", "rots")
@@ -59,13 +58,13 @@ class Intake(Subsystem):
         self._pivot.configurator.apply(IntakeConstants.INTAKE_PIVOT_CONFIGS)
         self._intake.configure(
             IntakeConstants.intake_config(),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kNoPersistParameters,
+            ResetMode.RESET_SAFE_PARAMETERS,
+            PersistMode.NO_PERSIST_PARAMETERS,
         )
         self._intake_follower.configure(
             IntakeConstants.intake_follower_config(),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kNoPersistParameters,
+            ResetMode.RESET_SAFE_PARAMETERS,
+            PersistMode.NO_PERSIST_PARAMETERS,
         )
 
         self._pivot.set_control(self._pivot_motion_magic_request.with_position(0.0))
@@ -76,11 +75,11 @@ class Intake(Subsystem):
         self._intake_pivot_setpoint_pub = None
         self._intake_pivot_position_pub = None
         if BuildConstants.PUBLISH_EVERYTHING:
-            nt = ntcore.NetworkTableInstance.getDefault().getTable("Intake")
-            self._intake_velo_pub = nt.getDoubleTopic("IntakeVelo").publish()
-            self._intake_setpoint_pub = nt.getDoubleTopic("IntakeSetpoint").publish()
-            self._intake_pivot_setpoint_pub = nt.getDoubleTopic("IntakePivotSetpoint").publish()
-            self._intake_pivot_position_pub = nt.getDoubleTopic("IntakePivotPosition").publish()
+            nt = ntcore.NetworkTableInstance.get_default().get_table("Intake")
+            self._intake_velo_pub = nt.get_double_topic("IntakeVelo").publish()
+            self._intake_setpoint_pub = nt.get_double_topic("IntakeSetpoint").publish()
+            self._intake_pivot_setpoint_pub = nt.get_double_topic("IntakePivotSetpoint").publish()
+            self._intake_pivot_position_pub = nt.get_double_topic("IntakePivotPosition").publish()
 
     # ---------------------------------------------------------------- rollers
 
@@ -89,7 +88,7 @@ class Intake(Subsystem):
         speed = max(-1.0, min(1.0, speed))
         if not self._roller_cache.should_send(("duty", speed)):
             return
-        self._intake.set(speed)
+        self._intake.set_throttle(speed)
         self._intake_setpoint_log.append(speed)
         if self._intake_setpoint_pub is not None:
             self._intake_setpoint_pub.set(speed)
@@ -98,7 +97,7 @@ class Intake(Subsystem):
         """Runs the rollers closed-loop. velocity is in RPM."""
         if not self._roller_cache.should_send(("rpm", velocity)):
             return
-        self._intake_controller.setSetpoint(velocity, SparkLowLevel.ControlType.kVelocity)
+        self._intake_controller.set_setpoint(velocity, SparkLowLevel.ControlType.VELOCITY)
         self._intake_setpoint_log.append(velocity)
         if self._intake_setpoint_pub is not None:
             self._intake_setpoint_pub.set(velocity)
@@ -106,14 +105,14 @@ class Intake(Subsystem):
     def stop_intake(self) -> None:
         if not self._roller_cache.should_send(("stop", 0.0)):
             return
-        self._intake.stopMotor()
+        self._intake.stop_motor()
         self._intake_setpoint_log.append(0.0)
         if self._intake_setpoint_pub is not None:
             self._intake_setpoint_pub.set(0.0)
 
     def get_intake_velocity(self) -> float:
         """Roller velocity in RPM."""
-        return self._intake_encoder.getVelocity()
+        return self._intake_encoder.get_velocity().get()
 
     # ------------------------------------------------------------------ pivot
 
@@ -167,10 +166,10 @@ class Intake(Subsystem):
         if self._pivot_routine is None:
             self._pivot_routine = SysIdRoutine(
                 SysIdRoutine.Config(
-                    rampRate=0.2,
-                    stepVoltage=2.0,
-                    recordState=lambda state: SignalLogger.write_string(
-                        "SysID_IntakePivot", SysIdRoutineLog.stateEnumToString(state)
+                    ramp_rate=0.2,
+                    step_voltage=2.0,
+                    record_state=lambda state: SignalLogger.write_string(
+                        "SysID_IntakePivot", SysIdRoutineLog.state_enum_to_string(state)
                     ),
                 ),
                 SysIdRoutine.Mechanism(self.set_intake_pivot_voltage, lambda log: None, self),
@@ -181,7 +180,7 @@ class Intake(Subsystem):
 
     def log(self) -> None:
         position = self.get_intake_pivot_position()
-        velocity = self._intake_encoder.getVelocity()
+        velocity = self._intake_encoder.get_velocity().get()
 
         self._intake_pivot_position_log.append(position)
         self._intake_velo_log.append(velocity)
@@ -193,10 +192,10 @@ class Intake(Subsystem):
 
     def check_hardware(self) -> None:
         hardware_fault_tracker.check_fault(
-            self._intake_alert, self._intake.hasActiveFault() or self._intake.hasActiveWarning()
+            self._intake_alert, self._intake.has_active_fault().get() or self._intake.has_active_warning().get()
         )
         hardware_fault_tracker.check_fault(
             self._intake_follower_alert,
-            self._intake_follower.hasActiveFault() or self._intake_follower.hasActiveWarning(),
+            self._intake_follower.has_active_fault().get() or self._intake_follower.has_active_warning().get(),
         )
         hardware_fault_tracker.check_fault(self._intake_pivot_alert, not self._pivot.is_connected)

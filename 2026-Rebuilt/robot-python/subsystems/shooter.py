@@ -8,9 +8,9 @@ from commands2 import Subsystem
 from commands2.sysid import SysIdRoutine
 from phoenix6 import SignalLogger, controls, hardware, signals
 from rev import PersistMode, ResetMode, SparkFlex, SparkLowLevel
-from wpilib import Alert
+from wpiutil import Alert
 from wpilib.sysid import SysIdRoutineLog
-from wpiutil.log import DoubleLogEntry
+from wpilog import DoubleLogEntry
 
 from constants import AprilTagConstants, BuildConstants, HardwareConstants, ShooterConstants
 from libs import limelight_helpers
@@ -28,11 +28,11 @@ class Shooter(Subsystem):
 
         self._shooter = hardware.TalonFX(HardwareConstants.SHOOTER_CAN, HardwareConstants.CANIVORE)
         self._shooter2 = hardware.TalonFX(HardwareConstants.SHOOTER_2_CAN, HardwareConstants.CANIVORE)
-        self._kicker = SparkFlex(HardwareConstants.KICKER_CAN, SparkLowLevel.MotorType.kBrushless)
-        self._live_floor = SparkFlex(HardwareConstants.LIVEFLOOR_CAN, SparkLowLevel.MotorType.kBrushless)
-        self._kicker_encoder = self._kicker.getEncoder()
-        self._live_floor_encoder = self._live_floor.getEncoder()
-        self._kicker_controller = self._kicker.getClosedLoopController()
+        self._kicker = SparkFlex(HardwareConstants.SYSTEMCORE_CAN_PORT, HardwareConstants.KICKER_CAN, SparkLowLevel.MotorType.BRUSHLESS)
+        self._live_floor = SparkFlex(HardwareConstants.SYSTEMCORE_CAN_PORT, HardwareConstants.LIVEFLOOR_CAN, SparkLowLevel.MotorType.BRUSHLESS)
+        self._kicker_encoder = self._kicker.get_encoder()
+        self._live_floor_encoder = self._live_floor.get_encoder()
+        self._kicker_controller = self._kicker.get_closed_loop_controller()
 
         self._static_brake_request = controls.StaticBrake()
         self._neutral_request = controls.NeutralOut()
@@ -43,16 +43,16 @@ class Shooter(Subsystem):
 
         self._shooter_velo = self._shooter.get_velocity()
 
-        self._shooter_alert = Alert("Shooter Alert", Alert.AlertType.kError)
-        self._shooter2_alert = Alert("Shooter 2 Alert", Alert.AlertType.kError)
-        self._kicker_alert = Alert("Kicker Alert", Alert.AlertType.kError)
-        self._live_floor_alert = Alert("Live Floor Alert", Alert.AlertType.kError)
+        self._shooter_alert = Alert("Shooter Alert", "Shooter Alert", Alert.Level.HIGH)
+        self._shooter2_alert = Alert("Shooter 2 Alert", "Shooter 2 Alert", Alert.Level.HIGH)
+        self._kicker_alert = Alert("Kicker Alert", "Kicker Alert", Alert.Level.HIGH)
+        self._live_floor_alert = Alert("Live Floor Alert", "Live Floor Alert", Alert.Level.HIGH)
 
         self._shooter_routine: SysIdRoutine | None = None
         self._kicker_routine: SysIdRoutine | None = None
 
         # Datalog
-        log = wpilib.DataLogManager.getLog()
+        log = wpilib.DataLogManager.get_log()
         self._shooter_velo_log = DoubleLogEntry(log, "Shooter/Velo", "RPS")
         self._kicker_velo_log = DoubleLogEntry(log, "Kicker/Velo", "RPM")
         self._live_floor_velo_log = DoubleLogEntry(log, "LiveFloor/Velo", "RPM")
@@ -73,13 +73,13 @@ class Shooter(Subsystem):
         self._shooter.configurator.apply(ShooterConstants.SHOOTER_CONFIG)
         self._kicker.configure(
             ShooterConstants.kicker_config(),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kNoPersistParameters,
+            ResetMode.RESET_SAFE_PARAMETERS,
+            PersistMode.NO_PERSIST_PARAMETERS,
         )
         self._live_floor.configure(
             ShooterConstants.livefloor_config(),
-            ResetMode.kResetSafeParameters,
-            PersistMode.kNoPersistParameters,
+            ResetMode.RESET_SAFE_PARAMETERS,
+            PersistMode.NO_PERSIST_PARAMETERS,
         )
         self._shooter2.configurator.apply(ShooterConstants.SHOOTER_CONFIG)
         self._shooter2.set_control(
@@ -87,8 +87,8 @@ class Shooter(Subsystem):
         )
 
         # Limelight distance is always published (it is cheap and needed for tuning the regression)
-        nt_inst = ntcore.NetworkTableInstance.getDefault()
-        self._distance_pub = nt_inst.getTable("LLfront").getDoubleTopic("LL distance").publish()
+        nt_inst = ntcore.NetworkTableInstance.get_default()
+        self._distance_pub = nt_inst.get_table("LLfront").get_double_topic("LL distance").publish()
 
         # NT logging
         self._kicker_velo_pub = None
@@ -98,13 +98,13 @@ class Shooter(Subsystem):
         self._shooter_setpoint_pub = None
         self._live_floor_setpoint_pub = None
         if BuildConstants.PUBLISH_EVERYTHING:
-            nt = nt_inst.getTable("Shooter")
-            self._kicker_velo_pub = nt.getDoubleTopic("kickerVelo").publish()
-            self._shooter_velo_pub = nt.getDoubleTopic("shooterVelo").publish()
-            self._live_floor_velo_pub = nt.getDoubleTopic("liveFloorVelo").publish()
-            self._kicker_setpoint_pub = nt.getDoubleTopic("kickerSetpoint").publish()
-            self._shooter_setpoint_pub = nt.getDoubleTopic("shooterSetpoint").publish()
-            self._live_floor_setpoint_pub = nt.getDoubleTopic("liveFloorSetpoint").publish()
+            nt = nt_inst.get_table("Shooter")
+            self._kicker_velo_pub = nt.get_double_topic("kickerVelo").publish()
+            self._shooter_velo_pub = nt.get_double_topic("shooterVelo").publish()
+            self._live_floor_velo_pub = nt.get_double_topic("liveFloorVelo").publish()
+            self._kicker_setpoint_pub = nt.get_double_topic("kickerSetpoint").publish()
+            self._shooter_setpoint_pub = nt.get_double_topic("shooterSetpoint").publish()
+            self._live_floor_setpoint_pub = nt.get_double_topic("liveFloorSetpoint").publish()
 
     # --------------------------------------------------------------- flywheel
 
@@ -168,7 +168,7 @@ class Shooter(Subsystem):
         speed = _clamp(speed, -1.0, 1.0)
         if not self._kicker_cache.should_send(("duty", speed)):
             return
-        self._kicker.set(speed)
+        self._kicker.set_throttle(speed)
 
         self._kicker_setpoint_log.append(speed)
         if self._kicker_setpoint_pub is not None:
@@ -178,7 +178,7 @@ class Shooter(Subsystem):
         """Runs the kicker closed-loop. velo is in RPM (0 - 6784)."""
         if not self._kicker_cache.should_send(("rpm", velo)):
             return
-        self._kicker_controller.setSetpoint(velo, SparkLowLevel.ControlType.kVelocity)
+        self._kicker_controller.set_setpoint(velo, SparkLowLevel.ControlType.VELOCITY)
 
         self._kicker_setpoint_log.append(velo)
         if self._kicker_setpoint_pub is not None:
@@ -187,18 +187,18 @@ class Shooter(Subsystem):
     def stop_kicker(self) -> None:
         if not self._kicker_cache.should_send(("stop", 0.0)):
             return
-        self._kicker.stopMotor()
+        self._kicker.stop_motor()
         self._kicker_setpoint_log.append(0.0)
         if self._kicker_setpoint_pub is not None:
             self._kicker_setpoint_pub.set(0.0)
 
     def _set_kicker_voltage(self, voltage: float) -> None:
         self._kicker_cache.invalidate()
-        self._kicker.setVoltage(voltage)
+        self._kicker.set_voltage(voltage)
 
     def get_kicker_velocity(self) -> float:
         """Kicker velocity in RPM."""
-        return self._kicker_encoder.getVelocity()
+        return self._kicker_encoder.get_velocity().get()
 
     # ------------------------------------------------------------- live floor
 
@@ -207,7 +207,7 @@ class Shooter(Subsystem):
         speed = _clamp(speed, -1.0, 1.0)
         if not self._live_floor_cache.should_send(speed):
             return
-        self._live_floor.set(speed)
+        self._live_floor.set_throttle(speed)
 
         self._live_floor_setpoint_log.append(speed)
         if self._live_floor_setpoint_pub is not None:
@@ -221,8 +221,8 @@ class Shooter(Subsystem):
         self._kicker_cache.invalidate()
         self._live_floor_cache.invalidate()
         self._shooter.set_control(self._static_brake_request)
-        self._kicker.stopMotor()
-        self._live_floor.stopMotor()
+        self._kicker.stop_motor()
+        self._live_floor.stop_motor()
 
     def idle_motors(self) -> None:
         """Lets the flywheel coast and stops the kicker and live floor."""
@@ -230,8 +230,8 @@ class Shooter(Subsystem):
         self._kicker_cache.invalidate()
         self._live_floor_cache.invalidate()
         self._shooter.set_control(self._neutral_request)
-        self._kicker.stopMotor()
-        self._live_floor.stopMotor()
+        self._kicker.stop_motor()
+        self._live_floor.stop_motor()
 
     # ------------------------------------------------------------------ sysid
 
@@ -242,10 +242,10 @@ class Shooter(Subsystem):
         if self._shooter_routine is None:
             self._shooter_routine = SysIdRoutine(
                 SysIdRoutine.Config(
-                    rampRate=0.5,
-                    stepVoltage=6.0,
-                    recordState=lambda state: SignalLogger.write_string(
-                        "SysID_Shooter", SysIdRoutineLog.stateEnumToString(state)
+                    ramp_rate=0.5,
+                    step_voltage=6.0,
+                    record_state=lambda state: SignalLogger.write_string(
+                        "SysID_Shooter", SysIdRoutineLog.state_enum_to_string(state)
                     ),
                 ),
                 SysIdRoutine.Mechanism(self._set_shooter_voltage, lambda log: None, self),
@@ -261,13 +261,13 @@ class Shooter(Subsystem):
             def _log(log: SysIdRoutineLog) -> None:
                 (
                     log.motor("kicker")
-                    .voltage(self._kicker.getAppliedOutput() * self._kicker.getBusVoltage())
-                    .position(self._kicker_encoder.getPosition())
-                    .velocity(self._kicker_encoder.getVelocity() / 60.0)
+                    .voltage(self._kicker.get_applied_output().get() * self._kicker.get_bus_voltage().get())
+                    .position(self._kicker_encoder.get_position().get())
+                    .velocity(self._kicker_encoder.get_velocity().get() / 60.0)
                 )
 
             self._kicker_routine = SysIdRoutine(
-                SysIdRoutine.Config(rampRate=1.0, stepVoltage=6.0, timeout=10.0),
+                SysIdRoutine.Config(ramp_rate=1.0, step_voltage=6.0, timeout=10.0),
                 SysIdRoutine.Mechanism(self._set_kicker_voltage, _log, self),
             )
         return self._kicker_routine
@@ -276,15 +276,15 @@ class Shooter(Subsystem):
 
     def log(self) -> None:
         shooter_velo = self.get_shooter_velocity()
-        kicker_velo = self._kicker_encoder.getVelocity()
-        live_floor_velo = self._live_floor_encoder.getVelocity()
+        kicker_velo = self._kicker_encoder.get_velocity().get()
+        live_floor_velo = self._live_floor_encoder.get_velocity().get()
 
         self._shooter_velo_log.append(shooter_velo)
         self._kicker_velo_log.append(kicker_velo)
         self._live_floor_velo_log.append(live_floor_velo)
 
-        self._kicker_voltage_log.append(self._kicker.getAppliedOutput() * self._kicker.getBusVoltage())
-        self._kicker_position_log.append(self._kicker_encoder.getPosition())
+        self._kicker_voltage_log.append(self._kicker.get_applied_output().get() * self._kicker.get_bus_voltage().get())
+        self._kicker_position_log.append(self._kicker_encoder.get_position().get())
 
         if self._shooter_velo_pub is not None:
             self._shooter_velo_pub.set(shooter_velo)
@@ -297,9 +297,9 @@ class Shooter(Subsystem):
         hardware_fault_tracker.check_fault(self._shooter_alert, not self._shooter.is_connected)
         hardware_fault_tracker.check_fault(self._shooter2_alert, not self._shooter2.is_connected)
         hardware_fault_tracker.check_fault(
-            self._kicker_alert, self._kicker.hasActiveFault() or self._kicker.hasActiveWarning()
+            self._kicker_alert, self._kicker.has_active_fault().get() or self._kicker.has_active_warning().get()
         )
         hardware_fault_tracker.check_fault(
             self._live_floor_alert,
-            self._live_floor.hasActiveFault() or self._live_floor.hasActiveWarning(),
+            self._live_floor.has_active_fault().get() or self._live_floor.has_active_warning().get(),
         )

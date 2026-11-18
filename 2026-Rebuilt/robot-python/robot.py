@@ -19,7 +19,9 @@ from util.can_logger import CANLogger
 
 
 class Robot(wpilib.TimedRobot):
-    def robotInit(self) -> None:
+    def __init__(self) -> None:
+        # 2027: robotInit() is gone, setup happens in the constructor
+        super().__init__()
         self._autonomous_command: commands2.Command | None = None
 
         print(f"Built with WPILib/RobotPy {wpilib.__version__}")
@@ -27,8 +29,8 @@ class Robot(wpilib.TimedRobot):
         # Configure CTRE SignalLogger
         SignalLogger.enable_auto_logging(False)
         SignalLogger.stop()
-        if wpilib.RobotBase.isReal():
-            SignalLogger.set_path("/u/CTRE_Signal_Logger")
+        if wpilib.RobotBase.is_real():
+            pass  # SystemCore: keep the CTRE default log location
         else:
             # In simulation, keep all logs in a hidden folder so that they are
             # never uploaded to the roboRIO by `robotpy deploy`.
@@ -38,13 +40,13 @@ class Robot(wpilib.TimedRobot):
             wpilib.DataLogManager.start(sim_log_dir)
 
         # Init logging
-        wpilib.DataLogManager.logNetworkTables(True)
-        wpilib.DataLogManager.logConsoleOutput(True)
+        wpilib.DataLogManager.log_network_tables(True)
+        wpilib.DataLogManager.log_console_output(True)
         console_logger.init()
 
-        wpilib.DriverStation.startDataLog(wpilib.DataLogManager.getLog(), True)
-        ntcore.NetworkTableInstance.getDefault().startConnectionDataLog(
-            wpilib.DataLogManager.getLog(), "NTConnections"
+        wpilib.DriverStation.start_data_log(wpilib.DataLogManager.get_log())
+        ntcore.NetworkTableInstance.get_default().start_connection_data_log(
+            wpilib.DataLogManager.get_log(), "NTConnections"
         )
 
         # Init CAN logging
@@ -54,9 +56,9 @@ class Robot(wpilib.TimedRobot):
         self._robot_container = utils.time_instantiation(RobotContainer)
 
         # Add logging periodic
-        self.addPeriodic(self._robot_container.log, 0.1, 0.001)  # every 100 ms
-        self.addPeriodic(self._robot_container.check_hardware, 0.5, 0.001)  # every 500 ms
-        self.addPeriodic(self._can_logger.log, 0.5, 0.003)  # every 500 ms
+        self.add_periodic(self._robot_container.log, 0.1, 0.001)  # every 100 ms
+        self.add_periodic(self._robot_container.check_hardware, 0.5, 0.001)  # every 500 ms
+        self.add_periodic(self._can_logger.log, 0.5, 0.003)  # every 500 ms
 
         # Init hardware fault tracker
         hardware_fault_tracker.robot_program_has_started()
@@ -68,14 +70,14 @@ class Robot(wpilib.TimedRobot):
 
         print("Robot constructor finished")
 
-    def robotPeriodic(self) -> None:
-        commands2.CommandScheduler.getInstance().run()
+    def robot_periodic(self) -> None:
+        commands2.CommandScheduler.get_instance().run()
         self._robot_container.periodic()
 
-    def disabledInit(self) -> None:
+    def disabled_init(self) -> None:
         print("DISABLED mode set")
 
-    def disabledPeriodic(self) -> None:
+    def disabled_periodic(self) -> None:
         # Build the selected auto ahead of time. Building parses the path files,
         # which is far too slow to do at the start of the autonomous period.
         if not self._robot_container.is_auto_loaded():
@@ -83,49 +85,50 @@ class Robot(wpilib.TimedRobot):
             gc.collect()
             gc.freeze()
 
-    def disabledExit(self) -> None:
+    def disabled_exit(self) -> None:
         pass
 
-    def autonomousInit(self) -> None:
+    def autonomous_init(self) -> None:
         print("AUTONOMOUS mode set")
 
-        # Make sure the auto is loaded (no-op if disabledPeriodic already did it)
+        # Make sure the auto is loaded (no-op if disabled_periodic already did it)
         self._robot_container.pregame_load()
 
         # Run auto command
         self._autonomous_command = self._robot_container.get_autonomous_command()
 
         if self._autonomous_command is not None:
-            commands2.CommandScheduler.getInstance().schedule(self._autonomous_command)
+            commands2.CommandScheduler.get_instance().schedule(self._autonomous_command)
 
-    def autonomousPeriodic(self) -> None:
+    def autonomous_periodic(self) -> None:
         pass
 
-    def autonomousExit(self) -> None:
+    def autonomous_exit(self) -> None:
         if self._autonomous_command is not None:
             self._autonomous_command.cancel()
             self._autonomous_command = None
 
-    def teleopInit(self) -> None:
+    def teleop_init(self) -> None:
         # Make sure nothing from autonomous can keep hold of a subsystem
         if self._autonomous_command is not None:
             self._autonomous_command.cancel()
             self._autonomous_command = None
-        commands2.CommandScheduler.getInstance().cancelAll()
+        commands2.CommandScheduler.get_instance().cancel_all()
         self._robot_container.teleop_started()
         print("TELEOP mode set")
 
-    def teleopPeriodic(self) -> None:
+    def teleop_periodic(self) -> None:
         pass
 
-    def teleopExit(self) -> None:
+    def teleop_exit(self) -> None:
         self._robot_container.teleop_ended()
 
-    def testInit(self) -> None:
-        commands2.CommandScheduler.getInstance().cancelAll()
+    # 2027: "test" mode is now called "utility"
+    def utility_init(self) -> None:
+        commands2.CommandScheduler.get_instance().cancel_all()
 
-    def testPeriodic(self) -> None:
+    def utility_periodic(self) -> None:
         pass
 
-    def testExit(self) -> None:
+    def utility_exit(self) -> None:
         pass

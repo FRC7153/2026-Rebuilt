@@ -7,7 +7,7 @@ library does.
 from dataclasses import dataclass, field
 
 import ntcore
-from wpimath.geometry import Pose2d, Rotation2d
+from wpimath import Pose2d, Rotation2d
 
 _subscribers: dict[tuple[str, str], ntcore.DoubleArraySubscriber] = {}
 _orientation_publishers: dict[str, ntcore.DoubleArrayPublisher] = {}
@@ -18,14 +18,14 @@ def _sanitize_name(name: str | None) -> str:
 
 
 def _table(limelight_name: str) -> ntcore.NetworkTable:
-    return ntcore.NetworkTableInstance.getDefault().getTable(_sanitize_name(limelight_name))
+    return ntcore.NetworkTableInstance.get_default().get_table(_sanitize_name(limelight_name))
 
 
 def _array_subscriber(limelight_name: str, entry_name: str) -> ntcore.DoubleArraySubscriber:
     key = (_sanitize_name(limelight_name), entry_name)
     sub = _subscribers.get(key)
     if sub is None:
-        sub = _table(limelight_name).getDoubleArrayTopic(entry_name).subscribe([])
+        sub = _table(limelight_name).get_double_array_topic(entry_name).subscribe([])
         _subscribers[key] = sub
     return sub
 
@@ -55,12 +55,12 @@ class PoseEstimate:
 
 def get_ty(limelight_name: str) -> float:
     """Vertical offset from crosshair to target, in degrees."""
-    return _table(limelight_name).getEntry("ty").getDouble(0.0)
+    return _table(limelight_name).get_entry("ty").get_double(0.0)
 
 
 def get_tx(limelight_name: str) -> float:
     """Horizontal offset from crosshair to target, in degrees."""
-    return _table(limelight_name).getEntry("tx").getDouble(0.0)
+    return _table(limelight_name).get_entry("tx").get_double(0.0)
 
 
 def get_target_count(limelight_name: str) -> int:
@@ -85,11 +85,11 @@ def set_robot_orientation(
     key = _sanitize_name(limelight_name)
     pub = _orientation_publishers.get(key)
     if pub is None:
-        pub = _table(limelight_name).getDoubleArrayTopic("robot_orientation_set").publish()
+        pub = _table(limelight_name).get_double_array_topic("robot_orientation_set").publish()
         _orientation_publishers[key] = pub
     pub.set([yaw, yaw_rate, pitch, pitch_rate, roll, roll_rate])
     if flush:
-        ntcore.NetworkTableInstance.getDefault().flush()
+        ntcore.NetworkTableInstance.get_default().flush()
 
 
 def get_raw_fiducials(limelight_name: str) -> list[RawFiducial]:
@@ -117,12 +117,12 @@ def get_raw_fiducials(limelight_name: str) -> list[RawFiducial]:
 
 
 def _get_bot_pose_estimate(limelight_name: str, entry_name: str, is_mega_tag2: bool) -> PoseEstimate | None:
-    atomic = _array_subscriber(limelight_name, entry_name).getAtomic()
+    atomic = _array_subscriber(limelight_name, entry_name).get_atomic()
     pose_array = atomic.value
     if len(pose_array) < 11:
         return None
 
-    pose = Pose2d(pose_array[0], pose_array[1], Rotation2d.fromDegrees(pose_array[5]))
+    pose = Pose2d(pose_array[0], pose_array[1], Rotation2d.from_degrees(pose_array[5]))
     latency = pose_array[6]
 
     # Convert server timestamp from microseconds to seconds and adjust for latency

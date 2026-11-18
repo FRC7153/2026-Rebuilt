@@ -50,8 +50,8 @@ def send_notification(notification: Notification) -> None:
     """Shows a notification popup on the Elastic dashboard."""
     global _notification_pub
     if _notification_pub is None:
-        topic = ntcore.NetworkTableInstance.getDefault().getStringTopic("/Elastic/RobotNotifications")
-        _notification_pub = topic.publish(ntcore.PubSubOptions(sendAll=True, keepDuplicates=True))
+        topic = ntcore.NetworkTableInstance.get_default().get_string_topic("/Elastic/RobotNotifications")
+        _notification_pub = topic.publish(ntcore.PubSubOptions(send_all=True, keep_duplicates=True))
     _notification_pub.set(notification.to_json())
 
 
@@ -59,6 +59,6 @@ def select_tab(tab: str | int) -> None:
     """Selects the Elastic tab with the given name (or index)."""
     global _selected_tab_pub
     if _selected_tab_pub is None:
-        topic = ntcore.NetworkTableInstance.getDefault().getStringTopic("/Elastic/SelectedTab")
-        _selected_tab_pub = topic.publish(ntcore.PubSubOptions(keepDuplicates=True))
+        topic = ntcore.NetworkTableInstance.get_default().get_string_topic("/Elastic/SelectedTab")
+        _selected_tab_pub = topic.publish(ntcore.PubSubOptions(keep_duplicates=True))
     _selected_tab_pub.set(str(tab))

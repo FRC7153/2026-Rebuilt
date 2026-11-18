@@ -5,10 +5,10 @@ from typing import Callable
 
 from commands2 import Command
 from phoenix6 import swerve
-from wpilib import DriverStation
-from wpimath.controller import ProfiledPIDControllerRadians
-from wpimath.geometry import Pose2d, Translation2d
-from wpimath.trajectory import TrapezoidProfileRadians
+from wpilib import Alliance, MatchState
+from wpimath import ProfiledPIDControllerRadians
+from wpimath import Pose2d, Translation2d
+from wpimath import TrapezoidProfileRadians
 
 from libs import limelight_helpers
 from subsystems.swerve.command_swerve_drivetrain import CommandSwerveDrivetrain
@@ -43,19 +43,19 @@ class PointToHubCommand(Command):
             1.5,
             TrapezoidProfileRadians.Constraints(math.radians(540), math.radians(720)),
         )
-        self._rotation_controller.enableContinuousInput(-math.pi, math.pi)
-        self._rotation_controller.setTolerance(math.radians(1.5))
+        self._rotation_controller.enable_continuous_input(-math.pi, math.pi)
+        self._rotation_controller.set_tolerance(math.radians(1.5))
 
         self._drive_request = swerve.requests.FieldCentric().with_drive_request_type(
             swerve.SwerveModule.DriveRequestType.OPEN_LOOP_VOLTAGE
         )
         self._idle_request = swerve.requests.Idle()
 
-        self.addRequirements(drivetrain)
+        self.add_requirements(drivetrain)
 
     def initialize(self) -> None:
         state = self._drivetrain.get_state()
-        self._rotation_controller.reset(state.pose.rotation().radians(), state.speeds.omega)
+        self._rotation_controller.reset(state.pose.rotation().radians(), state.velocity.omega)
 
     def execute(self) -> None:
         robot_pose = self._drivetrain.get_state().pose
@@ -91,15 +91,15 @@ class PointToHubCommand(Command):
         mt2 = limelight_helpers.get_bot_pose_estimate_wpi_blue_mega_tag2(self._limelight_name)
         if mt2 is not None and mt2.tag_count > 0:
             to_hub = self._get_hub_translation() - mt2.pose.translation()
-            return math.atan2(to_hub.Y(), to_hub.X())
+            return math.atan2(to_hub.y, to_hub.x)
 
         # --- 3. Odometry fallback ---
         to_hub = self._get_hub_translation() - robot_pose.translation()
-        return math.atan2(to_hub.Y(), to_hub.X())
+        return math.atan2(to_hub.y, to_hub.x)
 
     @staticmethod
     def _is_red() -> bool:
-        return DriverStation.getAlliance() == DriverStation.Alliance.kRed
+        return MatchState.get_alliance() == Alliance.RED
 
     def _get_hub_translation(self) -> Translation2d:
         return self.RED_HUB if self._is_red() else self.BLUE_HUB
@@ -107,7 +107,7 @@ class PointToHubCommand(Command):
     def _get_alliance_hub_tags(self) -> frozenset[int]:
         return self.RED_HUB_TAGS if self._is_red() else self.BLUE_HUB_TAGS
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return False
 
     def end(self, interrupted: bool) -> None:

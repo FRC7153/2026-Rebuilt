@@ -21,8 +21,8 @@ import math
 import random
 
 import ntcore
-from wpimath.geometry import Pose2d, Translation3d
-from wpimath.kinematics import ChassisSpeeds
+from wpimath import Pose2d, Translation3d
+from wpimath import ChassisVelocities
 
 FIELD_LENGTH = 16.54
 FIELD_WIDTH = 8.07
@@ -82,15 +82,15 @@ class FuelSim:
         self._field_dirty = True
         self._since_field_publish = 0.0
 
-        table = ntcore.NetworkTableInstance.getDefault().getTable("Sim")
-        self._field_pub = table.getStructArrayTopic("FieldFuel", Translation3d).publish()
-        self._flight_pub = table.getStructArrayTopic("InFlightFuel", Translation3d).publish()
-        self._held_pub = table.getIntegerTopic("HeldFuel").publish()
-        self._shots_pub = table.getIntegerTopic("ShotsFired").publish()
+        table = ntcore.NetworkTableInstance.get_default().get_table("Sim")
+        self._field_pub = table.get_struct_array_topic("FieldFuel", Translation3d).publish()
+        self._flight_pub = table.get_struct_array_topic("InFlightFuel", Translation3d).publish()
+        self._held_pub = table.get_integer_topic("HeldFuel").publish()
+        self._shots_pub = table.get_integer_topic("ShotsFired").publish()
         self._score_pubs = {
-            name: table.getSubTable("Score").getIntegerTopic(name).publish() for name in self._score
+            name: table.get_sub_table("Score").get_integer_topic(name).publish() for name in self._score
         }
-        reset_topic = table.getBooleanTopic("ResetFuel")
+        reset_topic = table.get_boolean_topic("ResetFuel")
         self._reset_pub = reset_topic.publish()
         self._reset_pub.set(False)
         self._reset_sub = reset_topic.subscribe(False)
@@ -131,7 +131,7 @@ class FuelSim:
         self,
         dt: float,
         pose: Pose2d,
-        robot_speeds: ChassisSpeeds,
+        robot_speeds: ChassisVelocities,
         intake_running: bool,
         shooter_rps: float,
         kicker_feeding: bool,
@@ -144,13 +144,13 @@ class FuelSim:
         sin_h = math.sin(pose.rotation().radians())
 
         if intake_running and self._held < HOPPER_CAPACITY:
-            self._run_intake(pose.X(), pose.Y(), cos_h, sin_h)
+            self._run_intake(pose.x, pose.y, cos_h, sin_h)
 
         if kicker_feeding and shooter_rps > MIN_SHOOTER_RPS and self._held > 0:
             self._feed_timer += dt
             while self._feed_timer >= 1.0 / FEED_RATE and self._held > 0:
                 self._feed_timer -= 1.0 / FEED_RATE
-                self._launch(pose.X(), pose.Y(), cos_h, sin_h, robot_speeds, shooter_rps)
+                self._launch(pose.x, pose.y, cos_h, sin_h, robot_speeds, shooter_rps)
         else:
             # The first ball comes out as soon as feeding starts
             self._feed_timer = 1.0 / FEED_RATE
@@ -183,7 +183,7 @@ class FuelSim:
         self._floor = kept
 
     def _launch(
-        self, rx: float, ry: float, cos_h: float, sin_h: float, speeds: ChassisSpeeds, shooter_rps: float
+        self, rx: float, ry: float, cos_h: float, sin_h: float, speeds: ChassisVelocities, shooter_rps: float
     ) -> None:
         self._held -= 1
         self._shots += 1

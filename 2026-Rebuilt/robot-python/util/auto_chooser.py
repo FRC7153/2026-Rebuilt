@@ -8,10 +8,18 @@ files, which is too slow to do at the start of autonomous).
 import os
 import traceback
 
+import telemetry
+import tunables
 import wpilib
 from commands2 import Command, PrintCommand
-from pathplannerlib.auto import AutoBuilder, PathPlannerAuto
-from wpilib import Alert, SendableChooser, SmartDashboard
+from wpiutil import Alert
+
+# PathPlannerLib has no 2027 (SystemCore) release yet. Without it the robot still
+# runs teleop; the chooser just offers "No Auto".
+try:
+    from pathplannerlib.auto import AutoBuilder, PathPlannerAuto
+except ImportError:
+    AutoBuilder = PathPlannerAuto = None
 
 from util import console_logger
 
@@ -20,26 +28,24 @@ NO_AUTO = "No Auto"
 
 class AutoChooser:
     def __init__(self) -> None:
-        self._chooser = SendableChooser()
         self._loaded_command: Command | None = None
         self._loaded_name: str | None = None
 
-        self._no_auto_loaded_alert = Alert("No auto loaded yet (run pregame)", Alert.AlertType.kInfo)
+        self._no_auto_loaded_alert = Alert("No auto loaded yet (run pregame)", "No auto loaded yet (run pregame)", Alert.Level.LOW)
 
-        self._chooser.setDefaultOption(NO_AUTO, NO_AUTO)
-        for name in self._find_auto_names():
-            self._chooser.addOption(name, name)
-
-        # Anything loaded is stale as soon as the selection changes
-        self._chooser.onChange(self._on_selection_changed)
-
-        # Add the chooser to the dashboard
-        SmartDashboard.putData("Auto", self._chooser)
+        # 2027 has no SendableChooser: publish the options, and let the dashboard
+        # set "Auto/Selected" to one of them. Anything loaded is stale as soon as
+        # the selection changes.
+        options = [NO_AUTO] + (self._find_auto_names() if AutoBuilder is not None else [])
+        telemetry.log("Auto/Options", options, element_type=str)
+        self._selected = tunables.add("Auto/Selected", NO_AUTO, on_tune=self._on_selection_changed)
+        if AutoBuilder is None:
+            print("[AutoChooser] PathPlannerLib not installed - autos are disabled.")
         self._no_auto_loaded_alert.set(True)
 
     @staticmethod
     def _find_auto_names() -> list[str]:
-        autos_dir = os.path.join(wpilib.getDeployDirectory(), "pathplanner", "autos")
+        autos_dir = os.path.join(wpilib.get_deploy_directory(), "pathplanner", "autos")
         try:
             files = os.listdir(autos_dir)
         except OSError:
@@ -47,7 +53,7 @@ class AutoChooser:
             return []
         return sorted(os.path.splitext(f)[0] for f in files if f.endswith(".auto"))
 
-    def _on_selection_changed(self, _new_auto: str) -> None:
+    def _on_selection_changed(self, _new_auto: object) -> None:
         self._loaded_command = None
         self._loaded_name = None
         self._no_auto_loaded_alert.set(True)
@@ -56,14 +62,14 @@ class AutoChooser:
         if name == NO_AUTO:
             return PrintCommand("No-op auto selected.")
 
-        if not AutoBuilder.isConfigured():
+        if AutoBuilder is None or not AutoBuilder.isConfigured():
             console_logger.report_error(
                 f"[AutoChooser] AutoBuilder is not configured, cannot run '{name}'. Running no auto."
             )
             return PrintCommand(f"Auto '{name}' unavailable: AutoBuilder not configured.")
 
         try:
-            # Autos have "resetOdom" enabled, so PathPlanner resets the pose to the
+            # Autos have "reset_odom" enabled, so PathPlanner resets the pose to the
             # (alliance-flipped) starting pose itself when the auto starts.
             return PathPlannerAuto(name)
         except Exception:
@@ -76,7 +82,7 @@ class AutoChooser:
 
     def is_loaded(self) -> bool:
         """If the currently selected auto has been built."""
-        selected = self._chooser.getSelected() or NO_AUTO
+        selected = str(self._selected.get() or NO_AUTO)
         return self._loaded_command is not None and self._loaded_name == selected
 
     def load_auto_command(self) -> None:
@@ -84,7 +90,7 @@ class AutoChooser:
         if self.is_loaded():
             return
 
-        selected = self._chooser.getSelected() or NO_AUTO
+        selected = str(self._selected.get() or NO_AUTO)
         self._loaded_command = self._build(selected)
         self._loaded_name = selected
 

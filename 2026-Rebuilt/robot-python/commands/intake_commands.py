@@ -21,7 +21,7 @@ class DeployIntakeCommand(Command):
         self._intake = intake
         self._pivot_position = pivot_position
         self._roller_speed = roller_speed
-        self.addRequirements(intake)
+        self.add_requirements(intake)
 
     def initialize(self) -> None:
         self._intake.set_and_remember_position(self._pivot_position)
@@ -36,7 +36,7 @@ class DeployIntakeCommand(Command):
     def end(self, interrupted: bool) -> None:
         self._intake.stop_intake()  # always stop rollers
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return False  # runs until interrupted
 
 
@@ -46,12 +46,12 @@ class HoldIntakeCommand(Command):
     def __init__(self, intake: Intake) -> None:
         super().__init__()
         self._intake = intake
-        self.addRequirements(intake)
+        self.add_requirements(intake)
 
     def execute(self) -> None:
         self._intake.hold_last_position()  # runs every loop
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return False  # runs forever as default
 
 
@@ -67,7 +67,7 @@ class HomeIntakeCommand(Command):
         self._intake = intake
         self._spike_count = 0
         self._has_homed = False
-        self.addRequirements(intake)
+        self.add_requirements(intake)
 
     def initialize(self) -> None:
         self._spike_count = 0
@@ -87,7 +87,7 @@ class HomeIntakeCommand(Command):
             self._has_homed = True
             print("Homed Intake Pivot")
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return self._has_homed
 
     def end(self, interrupted: bool) -> None:
@@ -103,7 +103,7 @@ class IntakeCommand(Command):
         super().__init__()
         self._intake = intake
         self._speed = speed
-        self.addRequirements(intake)
+        self.add_requirements(intake)
 
     def initialize(self) -> None:
         self._intake.set_intake_speed(self._speed)
@@ -111,7 +111,7 @@ class IntakeCommand(Command):
     def end(self, interrupted: bool) -> None:
         self._intake.stop_intake()  # always stop rollers when command ends
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return False  # runs until interrupted
 
 
@@ -122,10 +122,10 @@ class IntakePivotCommand(Command):
         super().__init__()
         self._intake = intake
         self._target_position = target_position
-        self.addRequirements(intake)
+        self.add_requirements(intake)
 
     def initialize(self) -> None:
         self._intake.set_and_remember_position(self._target_position)
 
-    def isFinished(self) -> bool:
+    def is_finished(self) -> bool:
         return abs(self._intake.get_intake_pivot_position() - self._target_position) < 0.05

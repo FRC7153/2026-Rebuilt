@@ -19,7 +19,7 @@ class SetpointCache:
 
     def should_send(self, key) -> bool:
         """True if this setpoint differs from the last one sent, or is due for a refresh."""
-        now = Timer.getFPGATimestamp()
+        now = Timer.get_timestamp()
         if key == self._key and 0.0 <= now - self._time < self._refresh_period:
             return False
         self._key = key

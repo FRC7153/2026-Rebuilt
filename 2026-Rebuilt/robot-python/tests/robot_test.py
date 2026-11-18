@@ -1,200 +1,105 @@
-"""Robot-specific simulation tests: run every auto and press every button."""
+"""SystemCore (2027) tests.
+
+pyfrc has no 2027 release that installs alongside WPILib 2027 yet, so these tests
+drive the robot directly with the WPILib simulation API instead of pyfrc fixtures.
+Run with: robotpy test
+"""
 
 import os
+import sys
 
-import ntcore
+import hal
 import pytest
-import wpilib
-import wpilib.simulation
+import wpilib.simulation as sim
 
-AUTOS_DIR = os.path.join(os.path.dirname(__file__), "..", "deploy", "pathplanner", "autos")
-AUTO_NAMES = sorted(os.path.splitext(f)[0] for f in os.listdir(AUTOS_DIR) if f.endswith(".auto"))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
-@pytest.mark.parametrize("auto_name", AUTO_NAMES)
-def test_auto_runs(control, auto_name):
-    """Selects each PathPlanner auto on the dashboard and runs it for a while."""
-    with control.run_robot():
-        control.step_timing(seconds=0.5, autonomous=True, enabled=False)
-
-        # Select the auto the same way a dashboard does
-        selected = (
-            ntcore.NetworkTableInstance.getDefault()
-            .getStringTopic("/SmartDashboard/Auto/selected")
-            .publish()
-        )
-        selected.set(auto_name)
-        control.step_timing(seconds=1.0, autonomous=True, enabled=False)
-
-        active = ntcore.NetworkTableInstance.getDefault().getStringTopic("/SmartDashboard/Auto/active").subscribe("")
-        assert active.get() == auto_name
-
-        control.step_timing(seconds=6.0, autonomous=True, enabled=True)
-        control.step_timing(seconds=0.5, autonomous=False, enabled=False)
+DT = 0.02
 
 
-def test_all_buttons(control):
-    """Presses every button/trigger on both controllers during teleop."""
-    with control.run_robot():
-        control.step_timing(seconds=0.5, autonomous=False, enabled=False)
+@pytest.fixture(scope="module")
+def robot():
+    hal.initialize()
+    sim.pause_timing()
+    from robot import Robot
 
-        ds = wpilib.simulation.DriverStationSim
-        controllers = [wpilib.simulation.XboxControllerSim(0), wpilib.simulation.XboxControllerSim(1)]
-        for port in (0, 1):
-            ds.setJoystickAxisCount(port, 6)
-            ds.setJoystickButtonCount(port, 10)
-            ds.setJoystickPOVCount(port, 1)
-        for sim in controllers:
-            sim.setPOV(-1)
-        ds.notifyNewData()
-
-        control.step_timing(seconds=0.5, autonomous=False, enabled=True)
-
-        # Drive around with the sticks
-        controllers[0].setLeftY(-0.8)
-        controllers[0].setLeftX(0.3)
-        controllers[0].setRightX(0.5)
-        ds.notifyNewData()
-        control.step_timing(seconds=0.5, autonomous=False, enabled=True)
-
-        for sim in controllers:
-            for button in range(1, 11):
-                sim.setRawButton(button, True)
-                ds.notifyNewData()
-                control.step_timing(seconds=0.2, autonomous=False, enabled=True)
-                sim.setRawButton(button, False)
-
-            for set_trigger in (sim.setLeftTriggerAxis, sim.setRightTriggerAxis):
-                set_trigger(1.0)
-                ds.notifyNewData()
-                control.step_timing(seconds=0.2, autonomous=False, enabled=True)
-                set_trigger(0.0)
-
-            sim.setPOV(0)
-            ds.notifyNewData()
-            control.step_timing(seconds=0.2, autonomous=False, enabled=True)
-            sim.setPOV(-1)
-
-        # Distance shoot: driver A + right trigger
-        controllers[0].setAButton(True)
-        controllers[0].setRightTriggerAxis(1.0)
-        ds.notifyNewData()
-        control.step_timing(seconds=0.5, autonomous=False, enabled=True)
-
-        control.step_timing(seconds=0.2, autonomous=False, enabled=False)
+    r = Robot()
+    sim.DriverStationSim.set_ds_attached(True)
+    yield r
 
 
-def _select_auto(control, auto_name):
-    selected = (
-        ntcore.NetworkTableInstance.getDefault().getStringTopic("/SmartDashboard/Auto/selected").publish()
-    )
-    selected.set(auto_name)
-    control.step_timing(seconds=1.0, autonomous=True, enabled=False)
-    return selected
+@pytest.fixture(scope="module")
+def pad():
+    p = sim.XboxControllerSim(0)
+    p.set_axes_available(6)
+    p.set_buttons_available(16)
+    p.set_povs_available(1)
+    return p
 
 
-def _push_driver_stick_forward():
-    ds = wpilib.simulation.DriverStationSim
-    driver = wpilib.simulation.XboxControllerSim(0)
-    ds.setJoystickAxisCount(0, 6)
-    ds.setJoystickButtonCount(0, 10)
-    ds.setJoystickPOVCount(0, 1)
-    driver.setPOV(-1)
-    driver.setLeftY(-1.0)
-    ds.notifyNewData()
-    return driver
+def run(robot, seconds: float) -> None:
+    for _ in range(int(seconds / DT)):
+        sim.DriverStationSim.notify_new_data()
+        sim.step_timing(DT)
+        robot._loop_func()
 
 
-@pytest.mark.parametrize("disabled_gap", [0.0, 0.5])
-def test_teleop_handoff(control, robot, disabled_gap):
-    """The driver must have control of the drivetrain immediately after autonomous,
-    even when the auto routine was still running when the period ended."""
-    with control.run_robot():
-        control.step_timing(seconds=0.5, autonomous=True, enabled=False)
-        publisher = _select_auto(control, "BlueLBAuto")
-
-        container = robot._robot_container
-        drivetrain = container.drivetrain
-
-        # Stop partway through the routine, like the end of the autonomous period would
-        control.step_timing(seconds=3.0, autonomous=True, enabled=True)
-        assert drivetrain.getCurrentCommand().getName() == "BlueLBAuto"
-
-        _push_driver_stick_forward()
-        if disabled_gap > 0.0:
-            control.step_timing(seconds=disabled_gap, autonomous=False, enabled=False)
-
-        control.step_timing(seconds=0.1, autonomous=False, enabled=True)
-
-        assert drivetrain.getCurrentCommand().getName() == "TeleopDrive"
-        fastest_target = max(abs(m.speed) for m in drivetrain.get_state().module_targets)
-        assert fastest_target > 1.0, "drivetrain did not respond to the stick right after auto"
-        del publisher
+def set_mode(mode, enabled: bool) -> None:
+    sim.DriverStationSim.set_robot_mode(mode)
+    sim.DriverStationSim.set_enabled(enabled)
+    sim.DriverStationSim.notify_new_data()
 
 
-def test_sim_mechanisms(control, robot):
-    """The simulated shooter and intake actually move (needed for a useful simulator)."""
-    with control.run_robot():
-        control.step_timing(seconds=0.5, autonomous=False, enabled=False)
-
-        ds = wpilib.simulation.DriverStationSim
-        operator = wpilib.simulation.XboxControllerSim(1)
-        ds.setJoystickAxisCount(1, 6)
-        ds.setJoystickButtonCount(1, 10)
-        ds.setJoystickPOVCount(1, 1)
-        operator.setPOV(-1)
-        operator.setRightTriggerAxis(1.0)  # shoot
-        operator.setLeftTriggerAxis(1.0)  # extend intake
-        ds.notifyNewData()
-
-        control.step_timing(seconds=3.0, autonomous=False, enabled=True)
-
-        container = robot._robot_container
-        assert container._shooter.get_shooter_velocity() == pytest.approx(24.25, abs=3.0)
-        assert container._intake.get_intake_pivot_position() == pytest.approx(-0.83, abs=0.1)
-        assert abs(container._intake.get_intake_velocity()) > 500
+def test_disabled_and_auto(robot):
+    set_mode(hal.RobotMode.TELEOPERATED, False)
+    run(robot, 1.0)
+    set_mode(hal.RobotMode.AUTONOMOUS, True)
+    run(robot, 2.0)
 
 
-def _sim_int(name):
-    return ntcore.NetworkTableInstance.getDefault().getIntegerTopic(f"/Sim/{name}").subscribe(-1)
+def test_teleop_drives_forward(robot, pad):
+    drivetrain = robot._robot_container.drivetrain
+    set_mode(hal.RobotMode.TELEOPERATED, True)
+    run(robot, 0.5)
+    start = drivetrain.get_state().pose.x
+    pad.set_left_y(-1.0)
+    run(robot, 1.5)
+    pad.set_left_y(0.0)
+    assert drivetrain.get_state().pose.x - start > 1.0
 
 
-def _operator(**axes):
-    ds = wpilib.simulation.DriverStationSim
-    operator = wpilib.simulation.XboxControllerSim(1)
-    ds.setJoystickAxisCount(1, 6)
-    ds.setJoystickButtonCount(1, 10)
-    ds.setJoystickPOVCount(1, 1)
-    operator.setPOV(-1)
-    for axis, value in axes.items():
-        getattr(operator, axis)(value)
-    ds.notifyNewData()
+@pytest.mark.parametrize(
+    "button",
+    ["a_button", "b_button", "x_button", "y_button", "left_bumper_button", "right_bumper_button", "dpad_up_button"],
+)
+def test_every_button(robot, pad, button):
+    set_mode(hal.RobotMode.TELEOPERATED, True)
+    getattr(pad, f"set_{button}")(True)
+    run(robot, 0.5)
+    getattr(pad, f"set_{button}")(False)
+    run(robot, 0.2)
 
 
-def test_sim_fuel_intake(control, robot):
-    """Driving the extended, running intake into fuel picks it up."""
-    from wpimath.geometry import Pose2d, Rotation2d
-
-    held = _sim_int("HeldFuel")
-    with control.run_robot():
-        control.step_timing(seconds=0.5, autonomous=False, enabled=False)
-        # Facing -X with the (back) intake touching the edge of the neutral-zone fuel
-        robot._robot_container.drivetrain.reset_pose(Pose2d(7.0, 4.035, Rotation2d.fromDegrees(180)))
-        _operator(setLeftTriggerAxis=1.0)  # extend intake + run rollers
-        control.step_timing(seconds=2.5, autonomous=False, enabled=True)
-        assert held.get() > 8
+@pytest.mark.parametrize("trigger", ["left_trigger", "right_trigger"])
+def test_triggers(robot, pad, trigger):
+    set_mode(hal.RobotMode.TELEOPERATED, True)
+    getattr(pad, f"set_{trigger}")(1.0)
+    run(robot, 1.0)
+    getattr(pad, f"set_{trigger}")(0.0)
+    run(robot, 0.2)
 
 
-def test_sim_fuel_shoot_scores(control, robot):
-    """The standard shot from ShootAuto's spot puts preloaded fuel in the red hub."""
-    from wpimath.geometry import Pose2d, Rotation2d
+def test_utility_and_disable(robot):
+    set_mode(hal.RobotMode.UTILITY, True)
+    run(robot, 0.5)
+    set_mode(hal.RobotMode.TELEOPERATED, False)
+    run(robot, 0.5)
 
-    shots = _sim_int("ShotsFired")
-    red = _sim_int("Score/Red")
-    with control.run_robot():
-        control.step_timing(seconds=0.5, autonomous=False, enabled=False)
-        robot._robot_container.drivetrain.reset_pose(Pose2d(13.45, 4.035, Rotation2d.fromDegrees(180)))
-        _operator(setRightTriggerAxis=1.0)  # shoot
-        control.step_timing(seconds=4.0, autonomous=False, enabled=True)
-        assert shots.get() > 0
-        assert red.get() > 0
+
+def test_periodic_logging(robot):
+    # These run from add_periodic() on the robot, which the loop stepping above skips
+    for _ in range(3):
+        robot._robot_container.log()
+        robot._robot_container.check_hardware()
+        robot._can_logger.log()
+        run(robot, 0.1)

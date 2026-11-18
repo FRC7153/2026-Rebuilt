@@ -4,7 +4,7 @@ https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
 """
 
 from phoenix6 import CANBus, configs, hardware, signals, swerve
-from wpimath.units import inchesToMeters
+from wpimath.units import inches_to_meters
 
 # Both sets of gains need to be tuned to your individual robot.
 
@@ -76,7 +76,7 @@ _pigeon_configs: configs.Pigeon2Configuration | None = None
 
 # CAN bus that the devices are located on;
 # All swerve devices must share the same CAN bus
-canbus = CANBus("CANivore", "./logs/example.hoot")
+canbus = CANBus("CANivore")
 
 # Theoretical free speed (m/s) at 12 V applied output:
 #   Kraken X60 6000 RPM / 8.14 gearing * (2 * pi * 2 in wheel) = 3.92 m/s
@@ -91,7 +91,7 @@ _couple_ratio = 3.5714285714285716
 
 _drive_gear_ratio = 8.142857142857142
 _steer_gear_ratio = 21.428571428571427
-_wheel_radius = inchesToMeters(2)
+_wheel_radius = inches_to_meters(2)
 
 _invert_left_side = False
 _invert_right_side = False
@@ -107,7 +107,7 @@ _drive_friction_voltage = 0.2
 
 drivetrain_constants = (
     swerve.SwerveDrivetrainConstants()
-    .with_can_bus_name(canbus.name)
+    .with_network(canbus)
     .with_pigeon2_id(_pigeon_id)
     .with_pigeon2_configs(_pigeon_configs)
 )
@@ -151,8 +151,8 @@ _front_left_encoder_offset = -0.47973628125 + 0.25  # rotations
 _front_left_steer_motor_inverted = True
 _front_left_encoder_inverted = False
 
-_front_left_x_pos = inchesToMeters(11)
-_front_left_y_pos = inchesToMeters(11)
+_front_left_x_pos = inches_to_meters(11)
+_front_left_y_pos = inches_to_meters(11)
 
 # Front Right
 _front_right_drive_motor_id = 3
@@ -162,8 +162,8 @@ _front_right_encoder_offset = -0.374755859375  # rotations
 _front_right_steer_motor_inverted = True
 _front_right_encoder_inverted = False
 
-_front_right_x_pos = inchesToMeters(11)
-_front_right_y_pos = inchesToMeters(-11)
+_front_right_x_pos = inches_to_meters(11)
+_front_right_y_pos = inches_to_meters(-11)
 
 # Back Left
 _back_left_drive_motor_id = 5
@@ -173,8 +173,8 @@ _back_left_encoder_offset = -0.057617 + 0.25  # rotations
 _back_left_steer_motor_inverted = True
 _back_left_encoder_inverted = False
 
-_back_left_x_pos = inchesToMeters(-11)
-_back_left_y_pos = inchesToMeters(-11)
+_back_left_x_pos = inches_to_meters(-11)
+_back_left_y_pos = inches_to_meters(-11)
 
 # Back Right
 _back_right_drive_motor_id = 7
@@ -184,8 +184,8 @@ _back_right_encoder_offset = -0.109130859375  # rotations
 _back_right_steer_motor_inverted = True
 _back_right_encoder_inverted = False
 
-_back_right_x_pos = inchesToMeters(-11)
-_back_right_y_pos = inchesToMeters(11)
+_back_right_x_pos = inches_to_meters(-11)
+_back_right_y_pos = inches_to_meters(11)
 
 front_left = _constants_creator.create_module_constants(
     _front_left_steer_motor_id,

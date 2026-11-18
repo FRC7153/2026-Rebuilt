@@ -10,13 +10,19 @@ from typing import Callable
 
 from commands2 import Command, Subsystem
 from commands2.sysid import SysIdRoutine
-from pathplannerlib.auto import AutoBuilder
-from pathplannerlib.config import PIDConstants, RobotConfig
-from pathplannerlib.controller import PPHolonomicDriveController
+import wpilib
+
+# PathPlannerLib has no 2027 (SystemCore) release yet; autos are skipped without it.
+try:
+    from pathplannerlib.auto import AutoBuilder
+    from pathplannerlib.config import PIDConstants, RobotConfig
+    from pathplannerlib.controller import PPHolonomicDriveController
+except ImportError:
+    AutoBuilder = None
 from phoenix6 import SignalLogger, swerve, utils
-from wpilib import DriverStation, Notifier, RobotController
+from wpilib import Alliance, DriverStation, MatchState, Notifier, RobotController, RobotState
 from wpilib.sysid import SysIdRoutineLog
-from wpimath.geometry import Pose2d, Rotation2d
+from wpimath import Pose2d, Rotation2d
 
 from constants import AprilTagConstants
 from libs import limelight_helpers
@@ -30,9 +36,9 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
     _SIM_LOOP_PERIOD = 0.004  # 4 ms
 
     # Blue alliance sees forward as 0 degrees (toward red alliance wall)
-    _BLUE_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.fromDegrees(0)
+    _BLUE_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.from_degrees(0)
     # Red alliance sees forward as 180 degrees (toward blue alliance wall)
-    _RED_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.fromDegrees(180)
+    _RED_ALLIANCE_PERSPECTIVE_ROTATION = Rotation2d.from_degrees(180)
 
     def __init__(
         self,
@@ -72,17 +78,17 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
         self._rotation_characterization = swerve.requests.SysIdSwerveRotation()
 
         # PathPlanner swerve request
-        self._path_apply_robot_speeds = swerve.requests.ApplyRobotSpeeds()
+        self._path_apply_robot_speeds = swerve.requests.ApplyRobotVelocity()
 
         # SysId routine for characterizing translation. This is used to find PID gains for the drive motors.
         self._sys_id_routine_translation = SysIdRoutine(
             SysIdRoutine.Config(
                 # Use default ramp rate (1 V/s) and timeout (10 s)
                 # Reduce dynamic step voltage to 4 V to prevent brownout
-                stepVoltage=4.0,
+                step_voltage=4.0,
                 # Log state with SignalLogger class
-                recordState=lambda state: SignalLogger.write_string(
-                    "SysIdTranslation_State", SysIdRoutineLog.stateEnumToString(state)
+                record_state=lambda state: SignalLogger.write_string(
+                    "SysIdTranslation_State", SysIdRoutineLog.state_enum_to_string(state)
                 ),
             ),
             SysIdRoutine.Mechanism(
@@ -97,10 +103,10 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
             SysIdRoutine.Config(
                 # Use default ramp rate (1 V/s) and timeout (10 s)
                 # Use dynamic voltage of 7 V
-                stepVoltage=7.0,
+                step_voltage=7.0,
                 # Log state with SignalLogger class
-                recordState=lambda state: SignalLogger.write_string(
-                    "SysIdSteer_State", SysIdRoutineLog.stateEnumToString(state)
+                record_state=lambda state: SignalLogger.write_string(
+                    "SysIdSteer_State", SysIdRoutineLog.state_enum_to_string(state)
                 ),
             ),
             SysIdRoutine.Mechanism(
@@ -116,13 +122,13 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
         self._sys_id_routine_rotation = SysIdRoutine(
             SysIdRoutine.Config(
                 # This is in radians per second², but SysId only supports "volts per second"
-                rampRate=math.pi / 6,
+                ramp_rate=math.pi / 6,
                 # This is in radians per second, but SysId only supports "volts"
-                stepVoltage=math.pi,
+                step_voltage=math.pi,
                 # Use default timeout (10 s)
                 # Log state with SignalLogger class
-                recordState=lambda state: SignalLogger.write_string(
-                    "SysIdRotation_State", SysIdRoutineLog.stateEnumToString(state)
+                record_state=lambda state: SignalLogger.write_string(
+                    "SysIdRotation_State", SysIdRoutineLog.state_enum_to_string(state)
                 ),
             ),
             SysIdRoutine.Mechanism(
@@ -170,12 +176,12 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
         # This allows us to correct the perspective in case the robot code restarts mid-match.
         # Otherwise, only check and apply the operator perspective if the DS is disabled.
         # This ensures driving behavior doesn't change until an explicit disable event occurs during testing.
-        if not self._has_applied_operator_perspective or DriverStation.isDisabled():
-            alliance_color = DriverStation.getAlliance()
+        if not self._has_applied_operator_perspective or RobotState.is_disabled():
+            alliance_color = MatchState.get_alliance()
             if alliance_color is not None:
                 self.set_operator_perspective_forward(
                     self._RED_ALLIANCE_PERSPECTIVE_ROTATION
-                    if alliance_color == DriverStation.Alliance.kRed
+                    if alliance_color == Alliance.RED
                     else self._BLUE_ALLIANCE_PERSPECTIVE_ROTATION
                 )
                 self._has_applied_operator_perspective = True
@@ -194,12 +200,12 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
             self._last_sim_time = current_time
 
             # use the measured time delta, get battery voltage from WPILib
-            self.update_sim_state(delta_time, RobotController.getBatteryVoltage())
+            self.update_sim_state(delta_time, RobotController.get_battery_voltage())
 
         self._last_sim_time = utils.get_current_time_seconds()
         # Run simulation at a faster rate so PID gains behave more reasonably
         self._sim_notifier = Notifier(_sim_periodic)
-        self._sim_notifier.startPeriodic(self._SIM_LOOP_PERIOD)
+        self._sim_notifier.start_periodic(self._SIM_LOOP_PERIOD)
 
     # -------------------------------------------------------------------- vision
 
@@ -243,7 +249,7 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
         if estimate.avg_tag_dist > 5.0:
             return  # TODO
 
-        if abs(self.get_state().speeds.omega) > 4.0:
+        if abs(self.get_state().velocity.omega) > 4.0:
             return  # Reject vision measurement if robot is rotating too fast
 
         std_devs = (
@@ -257,11 +263,13 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
     # --------------------------------------------------------------- pathplanner
 
     def _configure_auto_builder(self) -> None:
+        if AutoBuilder is None:
+            return
         try:
             config = RobotConfig.fromGUISettings()
         except Exception:
             traceback.print_exc()
-            DriverStation.reportError(
+            wpilib.report_error(
                 "Failed to load PathPlanner robot config (deploy/pathplanner/settings.json); autos are disabled",
                 False,
             )
@@ -270,13 +278,13 @@ class CommandSwerveDrivetrain(Subsystem, swerve.SwerveDrivetrain):
         AutoBuilder.configure(
             lambda: self.get_state().pose,
             self.reset_pose,
-            lambda: self.get_state().speeds,
-            lambda speeds, feedforwards: self.set_control(self._path_apply_robot_speeds.with_speeds(speeds)),
+            lambda: self.get_state().velocity,
+            lambda speeds, feedforwards: self.set_control(self._path_apply_robot_speeds.with_velocity(speeds)),
             PPHolonomicDriveController(
                 PIDConstants(2.0, 0.0, 0.2),
                 PIDConstants(3.0, 0.0, 0.1),
             ),
             config,
-            lambda: DriverStation.getAlliance() == DriverStation.Alliance.kRed,
+            lambda: MatchState.get_alliance() == Alliance.RED,
             self,
         )

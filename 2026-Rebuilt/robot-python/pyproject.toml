@@ -1,12 +1,14 @@
 #
+# SYSTEMCORE BRANCH (2027 alpha). For the roboRIO use the `main` branch.
+#
 # Use this configuration file to control what RobotPy packages are installed
-# on your RoboRIO
+# on your SystemCore
 #
 
 [tool.robotpy]
 
 # Version of robotpy this project depends on
-robotpy_version = "2026.2.2"
+robotpy_version = "2027.0.0a8"
 
 # Which optional robotpy components should be installed?
 components = [
@@ -15,11 +17,13 @@ components = [
     "sim",
 ]
 
-# Other pip packages to install on the roboRIO (and locally via `robotpy sync`)
+# Other pip packages to install on the SystemCore (and locally via `robotpy sync`)
 requires = [
-    "phoenix6==26.3.0",
-    "robotpy-rev==2026.0.4",
-    "robotpy-pathplannerlib==2026.1.2",
+    "phoenix6==26.70.0a2",
+    "robotpy-rev==2027.0.0a9",
+    # PathPlannerLib has no 2027 release yet. The code runs without it (teleop only,
+    # no autos). When one is published, add it here, e.g.:
+    # "robotpy-pathplannerlib==2027.x.y",
 ]
 
 [tool.robotpy.pyfrc]
